@@ -27,8 +27,9 @@ public class DiceLauncher : MonoBehaviour
     [SerializeField] private bool onFloor = true;
     [SerializeField] private float currentDragDistance;
 
+    [Header("Face Values")]    
     [SerializeField] private int diceValue;
-    [SerializeField] private List<GameObject> diceFaces;
+    [SerializeField] private List<DiceFaceData> diceFaces;
 
     private Rigidbody rb;
     private Collider diceCollider;
@@ -42,6 +43,7 @@ public class DiceLauncher : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         diceCollider = GetComponent<Collider>();
+        diceFaces = GetComponent<DiceVisualController>().Faces;        
 
         if (mainCamera == null)
         {
@@ -81,6 +83,7 @@ public class DiceLauncher : MonoBehaviour
             if (!newValue) return;            
             diceValue = GetDiceValue();  
             newValue = false;
+            DiceDamageManager.Instance.ResolveThrow(diceValue);
             //Debug.Log(diceValue);
         }
         else
@@ -91,7 +94,7 @@ public class DiceLauncher : MonoBehaviour
 
     private int GetDiceValue()
     {
-        return int.Parse(diceFaces.OrderByDescending(x => x.gameObject.transform.position.y).FirstOrDefault().name);
+        return diceFaces.OrderByDescending(x => x.Anchor.transform.position.y).FirstOrDefault().Value;
     }
 
     private void TrySelectDice()
