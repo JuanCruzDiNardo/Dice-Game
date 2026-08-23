@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+[RequireComponent(typeof(Collider))]
 public class Nexus : MonoBehaviour
 {
     public static Nexus Instance { get; private set; }
@@ -20,7 +21,12 @@ public class Nexus : MonoBehaviour
 
     public float MaxHealth => maxHealth * maxHealthMultiplier;
     public float CurrentHealth => currentHealth;
-    public float HealthPercent => CurrentHealth / MaxHealth;
+    public float HealthPercent => MaxHealth > 0f ? currentHealth / MaxHealth : 0f;
+
+    /// <summary>
+    /// Posición cacheada para uso masivo por enemigos.
+    /// </summary>
+    public Vector3 Position => transform.position;
 
     public event Action<float> OnHealthChanged;
     public event Action<float> OnDamaged;
@@ -44,15 +50,15 @@ public class Nexus : MonoBehaviour
 
     private void Update()
     {
-        if (enableRegeneration && !isDestroyed)
-        {
-            Heal(regenerationPerSecond * Time.deltaTime);
-        }
+        if (!enableRegeneration || isDestroyed)
+            return;
+
+        Heal(regenerationPerSecond * Time.deltaTime);
     }
 
     public void TakeDamage(float amount)
     {
-        if (isDestroyed)
+        if (isDestroyed || amount <= 0f)
             return;
 
         float finalDamage = amount * damageTakenMultiplier;
@@ -71,7 +77,7 @@ public class Nexus : MonoBehaviour
 
     public void Heal(float amount)
     {
-        if (isDestroyed)
+        if (isDestroyed || amount <= 0f)
             return;
 
         float finalHeal = amount * healingReceivedMultiplier;
@@ -81,16 +87,18 @@ public class Nexus : MonoBehaviour
         currentHealth += finalHeal;
         currentHealth = Mathf.Min(currentHealth, MaxHealth);
 
-        if (currentHealth > previousHealth)
+        float healedAmount = currentHealth - previousHealth;
+
+        if (healedAmount > 0f)
         {
-            OnHealed?.Invoke(currentHealth - previousHealth);
+            OnHealed?.Invoke(healedAmount);
             OnHealthChanged?.Invoke(currentHealth);
         }
     }
 
     public void SetMaxHealthMultiplier(float multiplier)
     {
-        maxHealthMultiplier = multiplier;
+        maxHealthMultiplier = Mathf.Max(0.01f, multiplier);
 
         currentHealth = Mathf.Min(currentHealth, MaxHealth);
 
@@ -99,12 +107,17 @@ public class Nexus : MonoBehaviour
 
     public void SetDamageTakenMultiplier(float multiplier)
     {
-        damageTakenMultiplier = multiplier;
+        damageTakenMultiplier = Mathf.Max(0f, multiplier);
     }
 
     public void SetHealingReceivedMultiplier(float multiplier)
     {
-        healingReceivedMultiplier = multiplier;
+        healingReceivedMultiplier = Mathf.Max(0f, multiplier);
+    }
+
+    public bool IsDestroyed()
+    {
+        return isDestroyed;
     }
 
     private void DestroyNexus()
