@@ -10,8 +10,12 @@ public class DiceDamageManager : MonoBehaviour
     [Header("Debug")]
     [SerializeField]
     private int nextThrowDamage = 1;
+    private int firstThrowDamage = 1;
+    private DamageContext dmgContext;
 
     public int NextThrowDamage => nextThrowDamage;
+    public int FirstThrowDamage => firstThrowDamage;
+    public DamageContext DmgContext => dmgContext;
 
     private void Awake()
     {
@@ -26,6 +30,8 @@ public class DiceDamageManager : MonoBehaviour
 
         AddModifier(new EvenDoubleDamageModifier());
         AddModifier(new CriticalOnSixModifier());
+
+        ResolveThrow(firstThrowDamage);
     }
 
     public void AddModifier(IDiceDamageModifier modifier)
@@ -44,7 +50,7 @@ public class DiceDamageManager : MonoBehaviour
         modifiers.Remove(modifier);
     }
 
-    public DamageContext ResolveThrow(int diceValue)
+    public void ResolveThrow(int diceValue)
     {
         DamageContext context = new DamageContext
         {
@@ -64,7 +70,14 @@ public class DiceDamageManager : MonoBehaviour
 
         Debug.Log("Resultado:" + diceValue + " Damage Base: " + context.BaseDamage + " Final Damage: " + context.Damage);
 
-        return context;
+        dmgContext = context;
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!other.TryGetComponent(out Enemy enemy))
+            return;
+
+        enemy.TakeDamage(dmgContext.DiceValue);
+    }
 }

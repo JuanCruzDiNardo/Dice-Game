@@ -41,6 +41,7 @@ public class Enemy : MonoBehaviour
 
         if (currentHealth <= 0f)
         {
+            Debug.Log("Enemy dead, dmg taken:" + damage);
             Die();
         }
     }
