@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5362743277312689744}
   - component: {fileID: 6542352215789282146}
   - component: {fileID: 4317762379999394756}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Orco
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -71,6 +71,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
   data: {fileID: 11400000, guid: 321ab1ffdafc96240bf4adeac5209821, type: 2}
   visualController: {fileID: 0}
+  separationRadius: 0.8
+  separationStrength: 1
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  maxNearbyEnemies: 16
 --- !u!1001 &2748156357333852368
 PrefabInstance:
   m_ObjectHideFlags: 0
