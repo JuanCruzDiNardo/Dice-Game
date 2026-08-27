@@ -9,4 +9,7 @@ public class EnemyData : ScriptableObject
     public float maxHealth = 10f;
     public float moveSpeed = 2f;
     public float nexusDamage = 1f;
+    [Header("Knockback")]
+    public float knockbackResistance = 1f;
+    public float knockbackRecovery = 3f;
 }

@@ -1449,6 +1449,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DiceDamageManager
   nextThrowDamage: 1
+  firstThrowDamage: 1
+  knockbackForce: 3
 --- !u!4 &5347267708524756068 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6142600134419610438, guid: 61f47f01f1f0f1d41a5088ba7de6a714, type: 3}

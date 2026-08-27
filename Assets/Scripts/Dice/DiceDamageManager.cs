@@ -8,10 +8,10 @@ public class DiceDamageManager : MonoBehaviour
     private readonly List<IDiceDamageModifier> modifiers = new();
 
     [Header("Debug")]
-    [SerializeField]
-    private int nextThrowDamage = 1;
-    private int firstThrowDamage = 1;
+    [SerializeField] private int nextThrowDamage = 1;
+    [SerializeField] private int firstThrowDamage = 1;
     private DamageContext dmgContext;
+    [SerializeField] private float knockbackForce = 5f;
 
     public int NextThrowDamage => nextThrowDamage;
     public int FirstThrowDamage => firstThrowDamage;
@@ -78,6 +78,7 @@ public class DiceDamageManager : MonoBehaviour
         if (!other.TryGetComponent(out Enemy enemy))
             return;
 
-        enemy.TakeDamage(dmgContext.DiceValue);
+        Vector3 knockbackDirection = enemy.transform.position - transform.position;
+        enemy.TakeDamage(dmgContext.Damage, knockbackDirection, knockbackForce);
     }
 }

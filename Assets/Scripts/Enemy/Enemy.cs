@@ -11,17 +11,10 @@ public class Enemy : MonoBehaviour
     [SerializeField] private EnemyVisualController visualController;
 
     [Header("Separation")]
-    [SerializeField, Min(0f)]
-    private float separationRadius = 1f;
-
-    [SerializeField, Min(0f)]
-    private float separationStrength = 1.5f;
-
-    [SerializeField]
-    private LayerMask enemyLayer;
-
-    [SerializeField, Min(1)]
-    private int maxNearbyEnemies = 16;
+    [SerializeField, Min(0f)] private float separationRadius = 1f;
+    [SerializeField, Min(0f)] private float separationStrength = 1.5f;
+    [SerializeField] private LayerMask enemyLayer;
+    [SerializeField, Min(1)] private int maxNearbyEnemies = 16;
 
     private Nexus nexus;
 
@@ -31,9 +24,8 @@ public class Enemy : MonoBehaviour
     private Collider[] enemyColliders;
     private Collider[] nearbyColliders;
 
-    // Dirección utilizada únicamente si dos enemigos
-    // están exactamente en la misma posición.
     private Vector3 overlapFallbackDirection;
+    private Vector3 knockbackVelocity;
 
     public float CurrentHealth => currentHealth;
     public float MaxHealth => data.maxHealth;
@@ -45,24 +37,16 @@ public class Enemy : MonoBehaviour
     private void Awake()
     {
         nexus = Nexus.Instance;
-
         currentHealth = data.maxHealth;
 
         enemyColliders = GetComponents<Collider>();
-
-        nearbyColliders =
-            new Collider[maxNearbyEnemies];
+        nearbyColliders = new Collider[maxNearbyEnemies];
 
         if (visualController == null)
-        {
             visualController = GetComponentInChildren<EnemyVisualController>();
-        }
 
-        // Cada enemigo recibe una dirección aleatoria
-        // sobre el plano XZ.
         Vector2 randomDirection = UnityEngine.Random.insideUnitCircle.normalized;
-
-        overlapFallbackDirection = new Vector3(randomDirection.x,0f,randomDirection.y);
+        overlapFallbackDirection = new Vector3(randomDirection.x, 0f, randomDirection.y);
 
         OnDeath += HandleDeathVisuals;
     }
@@ -89,37 +73,33 @@ public class Enemy : MonoBehaviour
 
     private void Move()
     {
-        Vector3 directionToNexus =
-            nexus.Position - transform.position;
-
-        // Movimiento solamente sobre XZ.
+        Vector3 directionToNexus = nexus.Position - transform.position;
         directionToNexus.y = 0f;
 
         if (directionToNexus.sqrMagnitude > 0.001f)
-        {
             directionToNexus.Normalize();
-        }
 
         Vector3 separationDirection = CalculateSeparation();
 
-        Vector3 finalDirection = directionToNexus + separationDirection * separationStrength;
+        Vector3 movementDirection = directionToNexus + separationDirection * separationStrength;
+        movementDirection.y = 0f;
 
-        finalDirection.y = 0f;
+        if (movementDirection.sqrMagnitude > 0.001f)
+            movementDirection.Normalize();
 
-        if (finalDirection.sqrMagnitude > 0.001f)
-        {
-            finalDirection.Normalize();
-        }
+        Vector3 normalMovement = movementDirection * data.moveSpeed;
+        Vector3 finalMovement = normalMovement + knockbackVelocity;
 
-        transform.position += finalDirection * data.moveSpeed * Time.deltaTime;
+        transform.position += finalMovement * Time.deltaTime;
+
+        knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, data.knockbackRecovery * Time.deltaTime);
     }
 
     private Vector3 CalculateSeparation()
     {
-        int nearbyCount = Physics.OverlapSphereNonAlloc( transform.position, separationRadius, nearbyColliders, enemyLayer, QueryTriggerInteraction.Collide );
+        int nearbyCount = Physics.OverlapSphereNonAlloc(transform.position, separationRadius, nearbyColliders, enemyLayer, QueryTriggerInteraction.Collide);
 
         Vector3 separation = Vector3.zero;
-
         int validNeighbours = 0;
 
         for (int i = 0; i < nearbyCount; i++)
@@ -129,10 +109,9 @@ public class Enemy : MonoBehaviour
             if (nearbyCollider == null)
                 continue;
 
-            if (!nearbyCollider.TryGetComponent( out Enemy otherEnemy))
+            if (!nearbyCollider.TryGetComponent(out Enemy otherEnemy))
                 continue;
 
-            // Ignorarse a sí mismo.
             if (otherEnemy == this)
                 continue;
 
@@ -140,20 +119,14 @@ public class Enemy : MonoBehaviour
                 continue;
 
             Vector3 awayDirection = transform.position - otherEnemy.transform.position;
-
-            // Ignoramos la altura.
             awayDirection.y = 0f;
 
             float sqrDistance = awayDirection.sqrMagnitude;
 
-            // Si ambos están prácticamente en el mismo punto
-            // usamos una dirección de emergencia.
             if (sqrDistance < 0.0001f)
             {
                 separation += overlapFallbackDirection;
-
                 validNeighbours++;
-
                 continue;
             }
 
@@ -162,19 +135,14 @@ public class Enemy : MonoBehaviour
             if (distance >= separationRadius)
                 continue;
 
-            // Cuanto más cerca esté el otro enemigo,
-            // mayor será la fuerza de separación.
             float weight = 1f - (distance / separationRadius);
 
             separation += awayDirection.normalized * weight;
-
             validNeighbours++;
         }
 
         if (validNeighbours > 0)
-        {
             separation /= validNeighbours;
-        }
 
         return separation;
     }
@@ -184,6 +152,11 @@ public class Enemy : MonoBehaviour
     // =========================================================
 
     public void TakeDamage(float damage)
+    {
+        TakeDamage(damage, Vector3.zero, 0f);
+    }
+
+    public void TakeDamage(float damage, Vector3 knockbackDirection, float knockbackForce)
     {
         if (isDead)
             return;
@@ -196,9 +169,27 @@ public class Enemy : MonoBehaviour
         if (currentHealth <= 0f)
         {
             currentHealth = 0f;
-
             Die();
+            return;
         }
+
+        ApplyKnockback(knockbackDirection, knockbackForce);
+    }
+
+    private void ApplyKnockback(Vector3 direction, float force)
+    {
+        if (force <= 0f)
+            return;
+
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude <= 0.001f)
+            return;
+
+        direction.Normalize();
+
+        float finalForce = force / Mathf.Max(0.01f, data.knockbackResistance);
+        knockbackVelocity = direction * finalForce;
     }
 
     // =========================================================
@@ -213,8 +204,7 @@ public class Enemy : MonoBehaviour
         if (!other.CompareTag("Nexus"))
             return;
 
-        nexus.TakeDamage( data.nexusDamage );
-
+        nexus.TakeDamage(data.nexusDamage);
         Die();
     }
 
@@ -228,6 +218,7 @@ public class Enemy : MonoBehaviour
             return;
 
         isDead = true;
+        knockbackVelocity = Vector3.zero;
 
         DisableColliders();
 
@@ -237,16 +228,12 @@ public class Enemy : MonoBehaviour
     private void HandleDeathVisuals(Enemy enemy)
     {
         if (visualController != null)
-        {
             visualController.PlayDeath();
-        }
     }
 
     private void DisableColliders()
     {
         foreach (Collider enemyCollider in enemyColliders)
-        {
             enemyCollider.enabled = false;
-        }
     }
 }
