@@ -25,7 +25,8 @@ public class WaveManager : MonoBehaviour
     private Coroutine waveRoutine;
 
     private readonly List<EnemyData> spawnQueue = new List<EnemyData>();
-    private readonly HashSet<Enemy> trackedEnemies = new HashSet<Enemy>();
+    private readonly HashSet<Enemy> aliveEnemiesList = new HashSet<Enemy>();
+    private readonly List<Enemy> spawnedEnemiesList = new List<Enemy>();
 
     public int CurrentWaveIndex => currentWaveIndex;
     public int SpawnedEnemies => spawnedEnemies;
@@ -54,6 +55,7 @@ public class WaveManager : MonoBehaviour
     {
         StopWaveRoutine();
         ClearTrackedEnemies();
+        ClearSpawnedEnemies();
 
         int nextWaveIndex = currentWaveIndex + 1;
 
@@ -92,6 +94,7 @@ public class WaveManager : MonoBehaviour
 
         StopWaveRoutine();
         ClearTrackedEnemies();
+        ClearSpawnedEnemies();
 
         currentWaveIndex = waveIndex;
         waveRoutine = StartCoroutine(WaveRoutine(wave));
@@ -110,6 +113,7 @@ public class WaveManager : MonoBehaviour
     {
         StopWaveRoutine();
         ClearTrackedEnemies();
+        ClearSpawnedEnemies();
 
         waveRunning = false;
         spawningFinished = false;
@@ -194,6 +198,7 @@ public class WaveManager : MonoBehaviour
         for (int i = spawnQueue.Count - 1; i > 0; i--)
         {
             int randomIndex = UnityEngine.Random.Range(0, i + 1);
+
             EnemyData temp = spawnQueue[i];
             spawnQueue[i] = spawnQueue[randomIndex];
             spawnQueue[randomIndex] = temp;
@@ -212,7 +217,9 @@ public class WaveManager : MonoBehaviour
         if (enemy == null)
             return;
 
-        trackedEnemies.Add(enemy);
+        spawnedEnemiesList.Add(enemy);
+        aliveEnemiesList.Add(enemy);
+
         enemy.OnDeath += HandleEnemyDeath;
 
         spawnedEnemies++;
@@ -238,7 +245,7 @@ public class WaveManager : MonoBehaviour
         if (enemy == null)
             return;
 
-        if (!trackedEnemies.Remove(enemy))
+        if (!aliveEnemiesList.Remove(enemy))
             return;
 
         enemy.OnDeath -= HandleEnemyDeath;
@@ -250,14 +257,25 @@ public class WaveManager : MonoBehaviour
 
     private void ClearTrackedEnemies()
     {
-        foreach (Enemy enemy in trackedEnemies)
+        foreach (Enemy enemy in aliveEnemiesList)
         {
             if (enemy != null)
                 enemy.OnDeath -= HandleEnemyDeath;
         }
 
-        trackedEnemies.Clear();
+        aliveEnemiesList.Clear();
         aliveEnemies = 0;
+    }
+
+    private void ClearSpawnedEnemies()
+    {
+        foreach (Enemy enemy in spawnedEnemiesList)
+        {
+            if (enemy != null)
+                Destroy(enemy.gameObject);
+        }
+
+        spawnedEnemiesList.Clear();
     }
 
     // =========================================================
