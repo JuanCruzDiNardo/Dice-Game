@@ -20,6 +20,7 @@ public class Enemy : MonoBehaviour
 
     private float currentHealth;
     private bool isDead;
+    private bool isInitialized;
 
     private Collider[] enemyColliders;
     private Collider[] nearbyColliders;
@@ -28,16 +29,16 @@ public class Enemy : MonoBehaviour
     private Vector3 knockbackVelocity;
 
     public float CurrentHealth => currentHealth;
-    public float MaxHealth => data.maxHealth;
-    public float DamageToNexus => data.nexusDamage;
+    public float MaxHealth => data != null ? data.maxHealth : 0f;
+    public float DamageToNexus => data != null ? data.nexusDamage : 0f;
     public bool IsDead => isDead;
+    public EnemyData Data => data;
 
     public event Action<Enemy> OnDeath;
 
     private void Awake()
     {
         nexus = Nexus.Instance;
-        currentHealth = data.maxHealth;
 
         enemyColliders = GetComponents<Collider>();
         nearbyColliders = new Collider[maxNearbyEnemies];
@@ -51,13 +52,37 @@ public class Enemy : MonoBehaviour
         OnDeath += HandleDeathVisuals;
     }
 
+    private void Start()
+    {
+        if (!isInitialized && data != null)
+            Initialize(data);
+    }
+
     private void OnDestroy()
     {
         OnDeath -= HandleDeathVisuals;
     }
 
+    public void Initialize(EnemyData enemyData)
+    {
+        if (enemyData == null)
+        {
+            Debug.LogError($"{name} received a null EnemyData.");
+            return;
+        }
+
+        data = enemyData;
+        currentHealth = data.maxHealth;
+        isDead = false;
+        isInitialized = true;
+        knockbackVelocity = Vector3.zero;
+    }
+
     private void Update()
     {
+        if (!isInitialized)
+            return;
+
         if (isDead)
             return;
 
@@ -158,6 +183,9 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(float damage, Vector3 knockbackDirection, float knockbackForce)
     {
+        if (!isInitialized)
+            return;
+
         if (isDead)
             return;
 
@@ -198,6 +226,9 @@ public class Enemy : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!isInitialized)
+            return;
+
         if (isDead)
             return;
 
