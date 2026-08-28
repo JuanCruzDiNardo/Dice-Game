@@ -26,7 +26,7 @@ public class DiceDamageManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        //DontDestroyOnLoad(gameObject);
 
         AddModifier(new EvenDoubleDamageModifier());
         AddModifier(new CriticalOnSixModifier());
