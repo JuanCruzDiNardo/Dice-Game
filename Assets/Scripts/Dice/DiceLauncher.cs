@@ -1,15 +1,14 @@
-using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Collider))]
+[RequireComponent(typeof(DiceFaceManager))]
 public class DiceLauncher : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Camera mainCamera;
+    [SerializeField] private DiceFaceManager faceManager;
 
     [Header("Selection")]
     [SerializeField] private float selectedHeightOffset = 0.15f;
@@ -21,15 +20,14 @@ public class DiceLauncher : MonoBehaviour
     [SerializeField] private float minimumDragDistance = 0.15f;
 
     [Header("Debug")]
-    [SerializeField] private bool isSelected;    
+    [SerializeField] private bool isSelected;
     [SerializeField] private bool isStill;
     [SerializeField] private bool newValue = true;
     [SerializeField] private bool onFloor = true;
     [SerializeField] private float currentDragDistance;
 
-    [Header("Face Values")]    
+    [Header("Face Value")]
     [SerializeField] private int diceValue;
-    [SerializeField] private List<DiceFaceData> diceFaces;
 
     private Rigidbody rb;
     private Collider diceCollider;
@@ -43,12 +41,12 @@ public class DiceLauncher : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         diceCollider = GetComponent<Collider>();
-        diceFaces = GetComponent<DiceVisualController>().Faces;        
+
+        if (faceManager == null)
+            faceManager = GetComponent<DiceFaceManager>();
 
         if (mainCamera == null)
-        {
             mainCamera = Camera.main;
-        }
 
         normalHeight = transform.position.y;
     }
@@ -59,18 +57,12 @@ public class DiceLauncher : MonoBehaviour
             return;
 
         if (Mouse.current.leftButton.wasPressedThisFrame && isStill)
-        {
             TrySelectDice();
-        }
 
-        if (isSelected &&
-            Mouse.current.leftButton.isPressed)
-        {
+        if (isSelected && Mouse.current.leftButton.isPressed)
             UpdateDrag();
-        }
 
-        if (isSelected &&
-            Mouse.current.leftButton.wasReleasedThisFrame)
+        if (isSelected && Mouse.current.leftButton.wasReleasedThisFrame)
         {
             ReleaseDice();
             newValue = true;
@@ -79,12 +71,16 @@ public class DiceLauncher : MonoBehaviour
 
         if (rb.angularVelocity == Vector3.zero && rb.linearVelocity == Vector3.zero && onFloor)
         {
-            isStill = true;            
-            if (!newValue) return;            
-            diceValue = GetDiceValue();  
+            isStill = true;
+
+            if (!newValue)
+                return;
+
+            diceValue = GetDiceValue();
             newValue = false;
-            DiceDamageManager.Instance.ResolveThrow(diceValue);
-            //Debug.Log(diceValue);
+
+            if (DiceDamageManager.Instance != null)
+                DiceDamageManager.Instance.ResolveThrow(diceValue);
         }
         else
         {
@@ -94,14 +90,15 @@ public class DiceLauncher : MonoBehaviour
 
     private int GetDiceValue()
     {
-        return diceFaces.OrderByDescending(x => x.Anchor.transform.position.y).FirstOrDefault().Value;
+        if (faceManager == null)
+            return 0;
+
+        return faceManager.GetTopFaceValue();
     }
 
     private void TrySelectDice()
     {
-        Ray ray = mainCamera.ScreenPointToRay(
-            Mouse.current.position.ReadValue()
-        );
+        Ray ray = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
 
         if (!Physics.Raycast(ray, out RaycastHit hit))
             return;
@@ -114,27 +111,21 @@ public class DiceLauncher : MonoBehaviour
 
     private void SelectDice()
     {
-        isSelected = true;        
+        isSelected = true;
 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        // Stop physics while aiming.
         rb.isKinematic = true;
 
         normalHeight = transform.position.y;
 
-        // Lift the die slightly.
-        transform.position +=
-            Vector3.up * selectedHeightOffset;
+        transform.position += Vector3.up * selectedHeightOffset;
 
-        // Give the die a small random tilt.
         float tiltX = Random.Range(-selectionTilt, selectionTilt);
         float tiltZ = Random.Range(-selectionTilt, selectionTilt);
 
-        transform.rotation =
-            Quaternion.Euler(tiltX, 0f, tiltZ) *
-            transform.rotation;
+        transform.rotation = Quaternion.Euler(tiltX, 0f, tiltZ) * transform.rotation;
 
         if (TryGetMousePositionOnTray(out Vector3 mouseWorld))
         {
@@ -150,86 +141,48 @@ public class DiceLauncher : MonoBehaviour
 
         dragCurrentWorld = mouseWorld;
 
-        Vector3 dragVector =
-            dragStartWorld - dragCurrentWorld;
-
+        Vector3 dragVector = dragStartWorld - dragCurrentWorld;
         dragVector.y = 0f;
 
-        currentDragDistance = Mathf.Min(
-            dragVector.magnitude,
-            maxDragDistance
-        );
+        currentDragDistance = Mathf.Min(dragVector.magnitude, maxDragDistance);
     }
 
     private void ReleaseDice()
     {
-        isSelected = false;        
+        isSelected = false;
 
-        Vector3 dragVector =
-            dragStartWorld - dragCurrentWorld;
-
+        Vector3 dragVector = dragStartWorld - dragCurrentWorld;
         dragVector.y = 0f;
 
-        float dragDistance = Mathf.Min(
-            dragVector.magnitude,
-            maxDragDistance
-        );
+        float dragDistance = Mathf.Min(dragVector.magnitude, maxDragDistance);
 
         currentDragDistance = 0f;
 
-        // Give physics control back to the die.
         rb.isKinematic = false;
 
         if (dragDistance < minimumDragDistance)
-        {
             return;
-        }
 
-        Vector3 direction =
-            dragVector.normalized;
+        if (DiceDamageManager.Instance != null)
+            DiceDamageManager.Instance.BeginThrow();
 
-        float power =
-            dragDistance / maxDragDistance;
+        Vector3 direction = dragVector.normalized;
+        float power = dragDistance / maxDragDistance;
+        Vector3 horizontalImpulse = new Vector3(direction.x, 0f, direction.z);
 
-        Vector3 horizontalImpulse =
-            new Vector3(
-                direction.x,
-                0f,
-                direction.z
-            );
+        horizontalImpulse *= launchForce * power;
 
-        horizontalImpulse *=
-            launchForce * power;
-
-        rb.AddForce(
-            horizontalImpulse,
-            ForceMode.Impulse
-        );
+        rb.AddForce(horizontalImpulse, ForceMode.Impulse);
     }
 
-    private bool TryGetMousePositionOnTray(
-        out Vector3 worldPosition)
+    private bool TryGetMousePositionOnTray(out Vector3 worldPosition)
     {
-        Ray ray = mainCamera.ScreenPointToRay(
-            Mouse.current.position.ReadValue()
-        );
+        Ray ray = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        Plane trayPlane = new Plane(Vector3.up, new Vector3(0f, normalHeight, 0f));
 
-        Plane trayPlane = new Plane(
-            Vector3.up,
-            new Vector3(
-                0f,
-                normalHeight,
-                0f
-            )
-        );
-
-        if (trayPlane.Raycast(
-            ray,
-            out float distance))
+        if (trayPlane.Raycast(ray, out float distance))
         {
-            worldPosition =
-                ray.GetPoint(distance);
-
+            worldPosition = ray.GetPoint(distance);
             return true;
         }
 

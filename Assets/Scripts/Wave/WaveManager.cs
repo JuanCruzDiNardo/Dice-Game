@@ -11,6 +11,9 @@ public class WaveManager : MonoBehaviour
     [Header("Spawners")]
     [SerializeField] private List<EnemySpawner> spawners = new List<EnemySpawner>();
 
+    [Header("Upgrades")]
+    [SerializeField] private DiceUpgradeManager diceUpgradeManager;
+
     [Header("Configuration")]
     [SerializeField] private bool startAutomatically = true;
     [SerializeField] private float timeBetweenWaves = 3f;
@@ -21,6 +24,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private int aliveEnemies;
     [SerializeField] private bool waveRunning;
     [SerializeField] private bool spawningFinished;
+    [SerializeField] private bool waitingForUpgrade;
 
     private Coroutine waveRoutine;
 
@@ -33,6 +37,7 @@ public class WaveManager : MonoBehaviour
     public int AliveEnemies => aliveEnemies;
     public bool WaveRunning => waveRunning;
     public bool SpawningFinished => spawningFinished;
+    public bool WaitingForUpgrade => waitingForUpgrade;
     public int TotalWaves => waves.Count;
     public WaveData CurrentWave => currentWaveIndex >= 0 && currentWaveIndex < waves.Count ? waves[currentWaveIndex] : null;
 
@@ -43,8 +48,20 @@ public class WaveManager : MonoBehaviour
 
     private void Start()
     {
+        if (diceUpgradeManager == null)
+            diceUpgradeManager = DiceUpgradeManager.Instance;
+
+        if (diceUpgradeManager != null)
+            diceUpgradeManager.OnSelectionCompleted += HandleUpgradeSelectionCompleted;
+
         if (startAutomatically)
             StartNextWave();
+    }
+
+    private void OnDestroy()
+    {
+        if (diceUpgradeManager != null)
+            diceUpgradeManager.OnSelectionCompleted -= HandleUpgradeSelectionCompleted;
     }
 
     // =========================================================
@@ -56,6 +73,8 @@ public class WaveManager : MonoBehaviour
         StopWaveRoutine();
         ClearTrackedEnemies();
         ClearSpawnedEnemies();
+
+        waitingForUpgrade = false;
 
         int nextWaveIndex = currentWaveIndex + 1;
 
@@ -96,6 +115,7 @@ public class WaveManager : MonoBehaviour
         ClearTrackedEnemies();
         ClearSpawnedEnemies();
 
+        waitingForUpgrade = false;
         currentWaveIndex = waveIndex;
         waveRoutine = StartCoroutine(WaveRoutine(wave));
     }
@@ -107,6 +127,7 @@ public class WaveManager : MonoBehaviour
 
         waveRunning = false;
         spawningFinished = false;
+        waitingForUpgrade = false;
     }
 
     public void SkipCurrentWave()
@@ -117,6 +138,7 @@ public class WaveManager : MonoBehaviour
 
         waveRunning = false;
         spawningFinished = false;
+        waitingForUpgrade = false;
 
         StartNextWave();
     }
@@ -295,10 +317,46 @@ public class WaveManager : MonoBehaviour
 
         if (currentWaveIndex >= waves.Count - 1)
         {
+            waitingForUpgrade = false;
             OnAllWavesFinished?.Invoke();
             return;
         }
 
+        StartUpgradeSelection();
+    }
+
+    private void StartUpgradeSelection()
+    {
+        if (diceUpgradeManager == null)
+        {
+            StartNextWaveDelay();
+            return;
+        }
+
+        bool optionsGenerated = diceUpgradeManager.GenerateOptions();
+
+        if (!optionsGenerated)
+        {
+            StartNextWaveDelay();
+            return;
+        }
+
+        waitingForUpgrade = true;
+    }
+
+    private void HandleUpgradeSelectionCompleted()
+    {
+        if (!waitingForUpgrade)
+            return;
+
+        waitingForUpgrade = false;
+
+        StartNextWaveDelay();
+    }
+
+    private void StartNextWaveDelay()
+    {
+        StopWaveRoutine();
         waveRoutine = StartCoroutine(NextWaveDelayRoutine());
     }
 

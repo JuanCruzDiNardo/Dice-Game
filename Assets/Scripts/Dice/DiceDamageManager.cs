@@ -5,17 +5,30 @@ public class DiceDamageManager : MonoBehaviour
 {
     public static DiceDamageManager Instance { get; private set; }
 
-    private readonly List<IDiceDamageModifier> modifiers = new();
+    private readonly List<IDiceDamageModifier> modifiers = new List<IDiceDamageModifier>();
+
+    [Header("Damage")]
+    [SerializeField] private int firstThrowDamage = 1;
+
+    [Header("Knockback")]
+    [SerializeField] private float knockbackForce = 5f;
 
     [Header("Debug")]
     [SerializeField] private int nextThrowDamage = 1;
-    [SerializeField] private int firstThrowDamage = 1;
+    [SerializeField] private bool forceNextRoll;
+    [SerializeField] private int forcedNextRollValue;
+
     private DamageContext dmgContext;
-    [SerializeField] private float knockbackForce = 5f;
+
+    private float throwStartTime;
+    private bool throwInProgress;
 
     public int NextThrowDamage => nextThrowDamage;
     public int FirstThrowDamage => firstThrowDamage;
     public DamageContext DmgContext => dmgContext;
+    public IReadOnlyList<IDiceDamageModifier> Modifiers => modifiers;
+    public bool ForceNextRoll => forceNextRoll;
+    public int ForcedNextRollValue => forcedNextRollValue;
 
     private void Awake()
     {
@@ -26,11 +39,8 @@ public class DiceDamageManager : MonoBehaviour
         }
 
         Instance = this;
-        //DontDestroyOnLoad(gameObject);
 
-        AddModifier(new EvenDoubleDamageModifier());
-        AddModifier(new CriticalOnSixModifier());
-
+        nextThrowDamage = firstThrowDamage;
         ResolveThrow(firstThrowDamage);
     }
 
@@ -50,27 +60,61 @@ public class DiceDamageManager : MonoBehaviour
         modifiers.Remove(modifier);
     }
 
+    public void BeginThrow()
+    {
+        throwStartTime = Time.time;
+        throwInProgress = true;
+    }
+
     public void ResolveThrow(int diceValue)
     {
+        int previousRoll = nextThrowDamage;
+        float throwDuration = throwInProgress ? Time.time - throwStartTime : 0f;
+
         DamageContext context = new DamageContext
         {
-            DiceValue = nextThrowDamage,
-            Damage = nextThrowDamage,
-            BaseDamage = nextThrowDamage
+            DiceValue = previousRoll,
+            Damage = previousRoll,
+            BaseDamage = previousRoll,
+            ThrowDuration = throwDuration
         };
 
         foreach (IDiceDamageModifier modifier in modifiers)
-        {
             modifier.Modify(context);
+
+        foreach (IDiceDamageModifier modifier in modifiers)
+        {
+            if (modifier is IDiceRollStateModifier stateModifier)
+                stateModifier.OnRollResolved(previousRoll, diceValue);
         }
 
-        // El resultado real del dado pasa a ser
-        // el daño base de la siguiente tirada.
         nextThrowDamage = diceValue;
-
-        Debug.Log("Resultado:" + diceValue + " Damage Base: " + context.BaseDamage + " Final Damage: " + context.Damage);
-
         dmgContext = context;
+        throwInProgress = false;
+
+        Debug.Log("Resultado: " + diceValue + " Damage Base: " + context.BaseDamage + " Final Damage: " + context.Damage);
+    }
+
+    public void RequestForcedNextRoll(int value)
+    {
+        forceNextRoll = true;
+        forcedNextRollValue = value;
+    }
+
+    public bool TryConsumeForcedNextRoll(out int value)
+    {
+        if (!forceNextRoll)
+        {
+            value = 0;
+            return false;
+        }
+
+        value = forcedNextRollValue;
+
+        forceNextRoll = false;
+        forcedNextRollValue = 0;
+
+        return true;
     }
 
     private void OnTriggerEnter(Collider other)

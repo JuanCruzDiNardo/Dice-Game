@@ -1274,6 +1274,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3910621630839182939, guid: 61f47f01f1f0f1d41a5088ba7de6a714, type: 3}
       insertIndex: 6
       addedObject: {fileID: 2739120816684142515}
+    - targetCorrespondingSourceObject: {fileID: 3910621630839182939, guid: 61f47f01f1f0f1d41a5088ba7de6a714, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3465485394495647846}
   m_SourcePrefab: {fileID: 100100000, guid: 61f47f01f1f0f1d41a5088ba7de6a714, type: 3}
 --- !u!4 &1724586057794842464 stripped
 Transform:
@@ -1346,6 +1349,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   mainCamera: {fileID: 0}
+  faceManager: {fileID: 0}
   selectedHeightOffset: 1
   selectionTilt: 50
   launchForce: 10
@@ -1357,85 +1361,6 @@ MonoBehaviour:
   onFloor: 1
   currentDragDistance: 0
   diceValue: 0
-  diceFaces:
-  - faceId: 
-    materialIndex: -1
-    anchor: {fileID: 0}
-    value: 1
-    texture: {fileID: 0}
-    faceTint: {r: 0.98039216, g: 0.98039216, b: 0.98039216, a: 1}
-    useCustomLabel: 0
-    customLabel: 
-    font: {fileID: 0}
-    textColor: {r: 0, g: 0, b: 0, a: 1}
-    fontSize: 4
-    fontStyle: 0
-    textOffset: 0.01
-  - faceId: 
-    materialIndex: -1
-    anchor: {fileID: 0}
-    value: 1
-    texture: {fileID: 0}
-    faceTint: {r: 0.98039216, g: 0.98039216, b: 0.98039216, a: 1}
-    useCustomLabel: 0
-    customLabel: 
-    font: {fileID: 0}
-    textColor: {r: 0, g: 0, b: 0, a: 1}
-    fontSize: 4
-    fontStyle: 0
-    textOffset: 0.01
-  - faceId: 
-    materialIndex: -1
-    anchor: {fileID: 0}
-    value: 1
-    texture: {fileID: 0}
-    faceTint: {r: 0.98039216, g: 0.98039216, b: 0.98039216, a: 1}
-    useCustomLabel: 0
-    customLabel: 
-    font: {fileID: 0}
-    textColor: {r: 0, g: 0, b: 0, a: 1}
-    fontSize: 4
-    fontStyle: 0
-    textOffset: 0.01
-  - faceId: 
-    materialIndex: -1
-    anchor: {fileID: 0}
-    value: 1
-    texture: {fileID: 0}
-    faceTint: {r: 0.98039216, g: 0.98039216, b: 0.98039216, a: 1}
-    useCustomLabel: 0
-    customLabel: 
-    font: {fileID: 0}
-    textColor: {r: 0, g: 0, b: 0, a: 1}
-    fontSize: 4
-    fontStyle: 0
-    textOffset: 0.01
-  - faceId: 
-    materialIndex: -1
-    anchor: {fileID: 0}
-    value: 1
-    texture: {fileID: 0}
-    faceTint: {r: 0.98039216, g: 0.98039216, b: 0.98039216, a: 1}
-    useCustomLabel: 0
-    customLabel: 
-    font: {fileID: 0}
-    textColor: {r: 0, g: 0, b: 0, a: 1}
-    fontSize: 4
-    fontStyle: 0
-    textOffset: 0.01
-  - faceId: 
-    materialIndex: -1
-    anchor: {fileID: 0}
-    value: 1
-    texture: {fileID: 0}
-    faceTint: {r: 0.98039216, g: 0.98039216, b: 0.98039216, a: 1}
-    useCustomLabel: 0
-    customLabel: 
-    font: {fileID: 0}
-    textColor: {r: 0, g: 0, b: 0, a: 1}
-    fontSize: 4
-    fontStyle: 0
-    textOffset: 0.01
 --- !u!114 &2739120816684142515
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1448,9 +1373,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1772051348e3f97488ab9a12e3526779, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DiceDamageManager
-  nextThrowDamage: 1
   firstThrowDamage: 1
   knockbackForce: 3
+  nextThrowDamage: 1
+  forceNextRoll: 0
+  forcedNextRollValue: 0
+--- !u!114 &3465485394495647846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2976589384241959289}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fac29d89745e8a04ea7acdaf0fb01996, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DiceFaceManager
+  visualController: {fileID: 0}
+  initialFaceSet: {fileID: 0}
+  currentValues: 
 --- !u!4 &5347267708524756068 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6142600134419610438, guid: 61f47f01f1f0f1d41a5088ba7de6a714, type: 3}
