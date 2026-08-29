@@ -4,6 +4,8 @@ Shader "Hidden/Dice/Hand Drawn Outline"
     {
         _OutlineColor("Outline Color", Color) = (0.045, 0.035, 0.055, 1.0)
         _OutlineWidth("Outline Width (Pixels)", Range(0.5, 6.0)) = 1.5
+        _OutlineWorldWidth("Outline Width (World Units)", Range(0.001, 0.1)) = 0.03
+        _OutlineMinWidth("Minimum Outline Width (Pixels)", Range(0.25, 1.0)) = 0.5
         _OutlineThreshold("Outline Threshold", Range(0.1, 3.0)) = 0.8
         _NormalThreshold("Normal Threshold", Range(0.01, 1.0)) = 0.28
         _DepthThreshold("Depth Threshold", Range(0.0001, 0.1)) = 0.012
@@ -57,6 +59,8 @@ Shader "Hidden/Dice/Hand Drawn Outline"
             CBUFFER_START(UnityPerMaterial)
                 half4 _OutlineColor;
                 float _OutlineWidth;
+                float _OutlineWorldWidth;
+                float _OutlineMinWidth;
                 float _OutlineThreshold;
                 float _NormalThreshold;
                 float _DepthThreshold;
@@ -79,6 +83,28 @@ Shader "Hidden/Dice/Hand Drawn Outline"
             float3 DiceSafeNormal(float3 normal)
             {
                 return normal * rsqrt(max(dot(normal, normal), 0.0001));
+            }
+
+            float DiceObjectOutlineScale(float2 uv)
+            {
+                return saturate(SAMPLE_TEXTURE2D_X(
+                    _CameraNormalsTexture,
+                    sampler_PointClamp,
+                    saturate(uv)).a);
+            }
+
+            float DicePixelsPerWorldUnit(float eyeDepth)
+            {
+                float screenHeight = max(_ScaledScreenParams.y, 1.0);
+
+                if (IsPerspectiveProjection())
+                {
+                    float projectionScale = abs(UNITY_MATRIX_P[1][1]);
+                    return screenHeight * projectionScale
+                        / max(2.0 * eyeDepth, 0.0001);
+                }
+
+                return screenHeight / max(unity_OrthoParams.y, 0.0001);
             }
 
             float DiceOutlinePairResponse(
@@ -165,7 +191,25 @@ Shader "Hidden/Dice/Hand Drawn Outline"
                     + (widthNoise * 2.0 - 1.0)
                     * min(_OutlineJitterStrength * 0.18, 0.4);
 
-                float radius = max(_OutlineWidth * widthVariation, 0.5);
+                // Keep the line stable in world space. A fixed pixel radius
+                // eventually overlaps nearby brick edges when an object becomes
+                // small on screen, which turns fine geometry into black patches.
+                float centerEyeDepth = DiceOutlineEyeDepth(uv);
+                float objectOutlineScale = DiceObjectOutlineScale(uv);
+                float maximumRadius = max(
+                    _OutlineWidth * widthVariation * objectOutlineScale,
+                    _OutlineMinWidth);
+                float projectedWorldRadius = _OutlineWorldWidth
+                    * DicePixelsPerWorldUnit(centerEyeDepth);
+                float outlineCoverage = sqrt(saturate(projectedWorldRadius));
+                projectedWorldRadius *= objectOutlineScale;
+                float radius = clamp(
+                    projectedWorldRadius,
+                    _OutlineMinWidth,
+                    maximumRadius);
+                float distanceScale = radius / max(maximumRadius, 0.0001);
+                jitterPixels *= distanceScale;
+
                 float2 texelSize = _BlitTexture_TexelSize.xy;
                 float diagonal = 0.70710678;
                 float2 detectionCenterUV = saturate(
@@ -201,7 +245,12 @@ Shader "Hidden/Dice/Hand Drawn Outline"
                     _OutlineThreshold + 0.25,
                     edgeResponse);
 
-                half blend = outlineMask * _OutlineColor.a;
+                // A sub-pixel line must reduce its coverage instead of becoming
+                // an opaque one-pixel line. This prevents dense geometry from
+                // turning into dark, blurry clusters at long distances.
+                half blend = outlineMask
+                    * _OutlineColor.a
+                    * (half)outlineCoverage;
                 half3 result = lerp(sourceColor.rgb, _OutlineColor.rgb, blend);
                 return half4(result, sourceColor.a);
             }

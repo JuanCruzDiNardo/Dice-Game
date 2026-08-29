@@ -1,9 +1,10 @@
-Shader "Dice/Hand Drawn Surface"
+Shader "HandDrawn3D/Surface"
 {
     Properties
     {
         [MainTexture] _BaseMap("Base Texture", 2D) = "white" {}
         [MainColor] _BaseColor("Base Tint", Color) = (1, 1, 1, 1)
+        _OutlineScale("Outline Scale", Range(0.1, 1.0)) = 1.0
         [HideInInspector] _FaceOverlayMap("Face Overlay", 2D) = "white" {}
         [HideInInspector] _FaceOverlayEnabled("Face Overlay Enabled", Float) = 0
         [HideInInspector] _BaseMapArray("Face Base Texture Array", 2DArray) = "" {}
@@ -108,6 +109,7 @@ Shader "Dice/Hand Drawn Surface"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 half4 _BaseColor;
+                half _OutlineScale;
                 half _FaceOverlayEnabled;
                 float _JitterFPS;
                 float _JitterStrength;
@@ -275,6 +277,33 @@ Shader "Dice/Hand Drawn Surface"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
 
+            // Keep the same per-material layout as the forward pass so the
+            // shader remains compatible with the SRP Batcher.
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                half4 _BaseColor;
+                half _OutlineScale;
+                half _FaceOverlayEnabled;
+                float _JitterFPS;
+                float _JitterStrength;
+                float _JitterSeed;
+                float _JitterVariationCount;
+                float _SurfaceJitterFPS;
+                half _SurfaceVariationStrength;
+                float _SurfaceNoiseScale;
+                float _SurfaceSeed;
+                float4 _LightDirection;
+                float4 _LightThresholds;
+                half _MidBrightness;
+                half _DarkBrightness;
+                half _LightSoftness;
+                float _FaceCount;
+                float _FaceBaseTextureSlices[32];
+                float _FaceOverlayTextureSlices[32];
+                float _FaceOverlayEnabledArray[32];
+                half4 _FaceTints[32];
+            CBUFFER_END
+
             // Camera normals pass used by the independent outline ----------
 
             struct DepthNormalsAttributes
@@ -321,9 +350,9 @@ Shader "Dice/Hand Drawn Surface"
                     float2 octNormalWS = PackNormalOctQuadEncode(normalWS);
                     float2 remappedOctNormalWS = saturate(octNormalWS * 0.5 + 0.5);
                     half3 packedNormalWS = PackFloat2To888(remappedOctNormalWS);
-                    outNormalWS = half4(packedNormalWS, 0.0h);
+                    outNormalWS = half4(packedNormalWS, _OutlineScale);
                 #else
-                    outNormalWS = half4(normalWS, 0.0h);
+                    outNormalWS = half4(normalWS, _OutlineScale);
                 #endif
 
                 #ifdef _WRITE_RENDERING_LAYERS
