@@ -9,12 +9,24 @@ public class Enemy : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private EnemyVisualController visualController;
+    [SerializeField] private EnemyAudio enemyAudio;
 
     [Header("Separation")]
     [SerializeField, Min(0f)] private float separationRadius = 1f;
     [SerializeField, Min(0f)] private float separationStrength = 1.5f;
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField, Min(1)] private int maxNearbyEnemies = 16;
+
+    [Header("Rotation")]
+    [SerializeField, Min(1f)] private float rotationSpeed = 8f;
+
+    [Header("Damage")]
+    [SerializeField] private GameObject damagePopupPrefab;
+    [SerializeField] private Transform damagePopupPoint;
+
+    [Header("Tray Bounds")]
+    [SerializeField] private BoxCollider trayBounds;
+    [SerializeField, Min(0f)] private float trayEdgePadding = 0.4f;
 
     private Nexus nexus;
 
@@ -50,6 +62,11 @@ public class Enemy : MonoBehaviour
         overlapFallbackDirection = new Vector3(randomDirection.x, 0f, randomDirection.y);
 
         OnDeath += HandleDeathVisuals;
+
+        trayBounds = GameObject.Find("TrayFloor").GetComponent<BoxCollider>();
+
+        if (enemyAudio == null)
+            enemyAudio = GetComponent<EnemyAudio>();
     }
 
     private void Start()
@@ -104,6 +121,20 @@ public class Enemy : MonoBehaviour
         if (directionToNexus.sqrMagnitude > 0.001f)
             directionToNexus.Normalize();
 
+        // Face the Nexus
+        if (directionToNexus.sqrMagnitude > 0.001f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(directionToNexus);
+
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                rotationSpeed * Time.deltaTime
+            );
+        }
+
+
+
         Vector3 separationDirection = CalculateSeparation();
 
         Vector3 movementDirection = directionToNexus + separationDirection * separationStrength;
@@ -114,10 +145,43 @@ public class Enemy : MonoBehaviour
 
         Vector3 normalMovement = movementDirection * data.moveSpeed;
         Vector3 finalMovement = normalMovement + knockbackVelocity;
+        Vector3 targetPosition = transform.position + finalMovement * Time.deltaTime;
 
-        transform.position += finalMovement * Time.deltaTime;
+        targetPosition = ClampToTray(targetPosition);
+
+        transform.position = targetPosition;
 
         knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, data.knockbackRecovery * Time.deltaTime);
+    }
+
+    private Vector3 ClampToTray(Vector3 position)
+    {
+        if (trayBounds == null)
+            return position;
+
+        Bounds bounds = trayBounds.bounds;
+
+        float minX = bounds.min.x + trayEdgePadding;
+        float maxX = bounds.max.x - trayEdgePadding;
+
+        float minZ = bounds.min.z + trayEdgePadding;
+        float maxZ = bounds.max.z - trayEdgePadding;
+
+        float originalX = position.x;
+        float originalZ = position.z;
+
+        position.x = Mathf.Clamp(position.x, minX, maxX);
+        position.z = Mathf.Clamp(position.z, minZ, maxZ);
+
+        // If knockback tried to push us through an edge,
+        // remove that component of the knockback.
+        if (!Mathf.Approximately(originalX, position.x))
+            knockbackVelocity.x = 0f;
+
+        if (!Mathf.Approximately(originalZ, position.z))
+            knockbackVelocity.z = 0f;
+
+        return position;
     }
 
     private Vector3 CalculateSeparation()
@@ -194,14 +258,32 @@ public class Enemy : MonoBehaviour
 
         currentHealth -= damage;
 
+        ShowDamagePopup(damage);
+
         if (currentHealth <= 0f)
         {
             currentHealth = 0f;
-            Die();
+            Die(EnemyDeathType.Dice);
             return;
+        }
+        else
+        {
+            if (enemyAudio != null)
+                enemyAudio.PlayDamage();
         }
 
         ApplyKnockback(knockbackDirection, knockbackForce);
+    }
+
+    private void ShowDamagePopup(float damage)
+    {
+        DamagePopup popup = Instantiate(
+            damagePopupPrefab,
+            damagePopupPoint.position,
+            Quaternion.identity
+        ).GetComponent<DamagePopup>();
+
+        popup.Setup(damage);
     }
 
     private void ApplyKnockback(Vector3 direction, float force)
@@ -236,20 +318,23 @@ public class Enemy : MonoBehaviour
             return;
 
         nexus.TakeDamage(data.nexusDamage);
-        Die();
+        Die(EnemyDeathType.Nexus);
     }
 
     // =========================================================
     // DEATH
     // =========================================================
 
-    private void Die()
+    private void Die(EnemyDeathType deathType)
     {
         if (isDead)
             return;
 
         isDead = true;
         knockbackVelocity = Vector3.zero;
+
+        if (enemyAudio != null)
+            enemyAudio.PlayDeath(deathType);
 
         DisableColliders();
 

@@ -82,6 +82,8 @@ public class OddDoubleDamageModifier : IDiceDamageModifier
     }
 }
 
+
+
 public class ExtremeValuesModifier : IDiceDamageModifier
 {
     private readonly int multiplier;

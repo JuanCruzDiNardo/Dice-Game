@@ -219,7 +219,7 @@ public class CriticalStreakData : DiceDamageModifierData
     }
 }
 
-[CreateAssetMenu(fileName = "Accumulation", menuName = "Dice/Modifiers/Future/Acumulacion")]
+/*[CreateAssetMenu(fileName = "Accumulation", menuName = "Dice/Modifiers/Future/Acumulacion")]
 public class AccumulationData : DiceDamageModifierData
 {
     [SerializeField] private int multiplier = 2;
@@ -228,7 +228,7 @@ public class AccumulationData : DiceDamageModifierData
     {
         return new AccumulationModifier(multiplier);
     }
-}
+}*/
 
 [CreateAssetMenu(fileName = "AscendingStaircase", menuName = "Dice/Modifiers/Future/Escalera Ascendente")]
 public class AscendingStaircaseData : DiceDamageModifierData

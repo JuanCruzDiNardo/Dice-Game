@@ -700,7 +700,7 @@ GameObject:
   - component: {fileID: 186074659}
   m_Layer: 0
   m_Name: TrayFloor
-  m_TagString: Untagged
+  m_TagString: Tray
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2586,7 +2586,7 @@ GameObject:
   - component: {fileID: 842945106}
   m_Layer: 0
   m_Name: Wall_Right
-  m_TagString: Untagged
+  m_TagString: Tray
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3359,35 +3359,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DiceUpgradeManager
   availableModifiers:
-  - {fileID: 11400000, guid: 1e147c36a1a455742a68829012ffec46, type: 2}
-  - {fileID: 11400000, guid: f64791286dbbaf84f84b9e975843cde7, type: 2}
-  - {fileID: 11400000, guid: 5e78951a9419f8b46ba5f1a323888888, type: 2}
-  - {fileID: 11400000, guid: 77a950c40d12edd47aaecc71b2009c90, type: 2}
-  - {fileID: 11400000, guid: f65302ba61c548149a01a30f64cdc045, type: 2}
-  - {fileID: 11400000, guid: fe6f319f9cc8c31479a750692c68a7d1, type: 2}
-  - {fileID: 11400000, guid: 3b0e87e2e17f6dc4abd0aac49f2c8cd4, type: 2}
-  - {fileID: 11400000, guid: a27bca7e9b0aa354187ae8aed45a60e5, type: 2}
-  - {fileID: 11400000, guid: 39f0fc57cc8ba534db35beabd22ae6c9, type: 2}
-  - {fileID: 11400000, guid: c4edf72bd408aff45ad1b2293d02157b, type: 2}
-  - {fileID: 11400000, guid: 7dae0deb42008c144bd468b44ac2b1c4, type: 2}
-  - {fileID: 11400000, guid: da90902f73714724f9f6d6aa6aec2eeb, type: 2}
-  - {fileID: 11400000, guid: bfeabd993793a104a8c9cc76504a69f9, type: 2}
-  - {fileID: 11400000, guid: 22704b7c7495bdf45aa526a64f258c39, type: 2}
-  - {fileID: 11400000, guid: 85cad24b574de574a98d11e9d7f92a04, type: 2}
-  - {fileID: 11400000, guid: dc3457d1dff069d4ca983dae51a848f4, type: 2}
-  - {fileID: 11400000, guid: 7da33186c3ad12c40a07b2a3bc1b3e03, type: 2}
-  - {fileID: 11400000, guid: 1723a9d01002f3b42aebcf734042d3f8, type: 2}
-  - {fileID: 11400000, guid: dba6573949d32a544a7a3cfe59bccdef, type: 2}
-  - {fileID: 11400000, guid: 63de1302e1ddefe44b086d015941139e, type: 2}
-  - {fileID: 11400000, guid: c3b51f5eabeee59438dcb8b58b734b47, type: 2}
-  - {fileID: 11400000, guid: a53562491add5874bac9752f4da1ea32, type: 2}
-  - {fileID: 11400000, guid: 9c7967a60c0284d48b9fd6044ef4af46, type: 2}
-  - {fileID: 11400000, guid: dd547a5f6c4ef094bbee17dda7fe9425, type: 2}
-  - {fileID: 11400000, guid: 895c33b95cd989d499c0f112bea9f7fd, type: 2}
-  - {fileID: 11400000, guid: bba5d2537e2612a41a59cfdc27dff45e, type: 2}
-  - {fileID: 11400000, guid: a865a06a175f3084cb9db139164f3075, type: 2}
-  - {fileID: 11400000, guid: a360d21407e2076459238dca55423bef, type: 2}
-  - {fileID: 11400000, guid: 2d399b82d670b8a498854a43fcb9931f, type: 2}
+  - {fileID: 11400000, guid: 332a48e6b89d5624682a1beda2f2c8f2, type: 2}
   optionsPerSelection: 3
   selectionActive: 0
 --- !u!1 &1340824472
@@ -3588,7 +3560,7 @@ GameObject:
   - component: {fileID: 1392909403}
   m_Layer: 0
   m_Name: Wall_Left
-  m_TagString: Untagged
+  m_TagString: Tray
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3700,7 +3672,7 @@ GameObject:
   - component: {fileID: 1393566838}
   m_Layer: 0
   m_Name: Wall_Top
-  m_TagString: Untagged
+  m_TagString: Tray
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3812,7 +3784,7 @@ GameObject:
   - component: {fileID: 1413579027}
   m_Layer: 0
   m_Name: Wall_Bottom
-  m_TagString: Untagged
+  m_TagString: Tray
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
