@@ -25,7 +25,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject defeatPanel;
 
     [Header("Scenes")]
-    [SerializeField] private string mainMenuSceneName = "MainMenu";
+    [SerializeField] private string mainMenuSceneName = "Main Menu";
 
     public GameState CurrentState { get; private set; }
 
