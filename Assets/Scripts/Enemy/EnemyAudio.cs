@@ -45,6 +45,7 @@ public class EnemyAudio : MonoBehaviour
         {
             case EnemyDeathType.Dice:
                 PlayRandomClip(diceDeathClips, deathVolume);
+                CameraShake.Instance.Shake();
                 break;
 
             case EnemyDeathType.Nexus:
