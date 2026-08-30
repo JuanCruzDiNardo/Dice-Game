@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: a3c7a7c1d1e155b44a6dce00875d2271, type: 3}
   m_Name: Sacrifice
   m_EditorClassIdentifier: Assembly-CSharp::SacrificeDiceData
   modifierName: Sacrificio

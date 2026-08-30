@@ -126,6 +126,13 @@ public sealed class MagicFloatingParticlesController : MonoBehaviour
         RefreshEffect();
     }
 
+    public void StopEmission()
+    {
+        ResolveReferences();
+        StopEmitting(motes);
+        StopEmitting(sparks);
+    }
+
     [ContextMenu("Refresh Magic Floating Particles")]
     private void RefreshFromContextMenu()
     {
@@ -184,5 +191,15 @@ public sealed class MagicFloatingParticlesController : MonoBehaviour
     {
         Transform child = transform.Find(childName);
         return child != null ? child.GetComponent<ParticleSystem>() : null;
+    }
+
+    private static void StopEmitting(ParticleSystem target)
+    {
+        if (target == null)
+            return;
+
+        target.Stop(
+            withChildren: false,
+            ParticleSystemStopBehavior.StopEmitting);
     }
 }

@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: ExtremeFaces
+  m_Script: {fileID: 11500000, guid: cb71b5e50472b744aa58a2caa66c6f0e, type: 3}
+  m_Name: FaceSetModifier 3
   m_EditorClassIdentifier: Assembly-CSharp::FaceSetModifierData
-  modifierName: Extremos
-  description: El dado pasa a tener 1, 1, 1, 6, 6, 6.
+  modifierName: Todo o nada
+  description: '`1, 1, 1, 1, 6, 6`.'
   icon: {fileID: 0}
-  faceSet: {fileID: 11400000, guid: c10dde632a060a845b96efa1b70f0bf0, type: 2}
+  faceSet: {fileID: 0}

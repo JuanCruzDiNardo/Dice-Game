@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: AllorNothingFace
+  m_Script: {fileID: 11500000, guid: cb71b5e50472b744aa58a2caa66c6f0e, type: 3}
+  m_Name: FaceSetModifier 4
   m_EditorClassIdentifier: Assembly-CSharp::FaceSetModifierData
-  modifierName: Todo o nada
-  description: El dado pasa a tener 1, 1, 1, 1, 6, 6.
+  modifierName: "Especializaci\xF3n par"
+  description: '`2, 2, 4, 4, 6, 6`.'
   icon: {fileID: 0}
-  faceSet: {fileID: 11400000, guid: e033222bdff7ba043b01d4b2796f3da0, type: 2}
+  faceSet: {fileID: 11400000, guid: 9312a9d2304787e47ae9983a3423d57f, type: 2}

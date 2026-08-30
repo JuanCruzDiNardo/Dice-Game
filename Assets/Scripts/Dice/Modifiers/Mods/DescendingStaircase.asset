@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 6ccb2b0c2bb6ea948ab7ff2568ad0cba, type: 3}
   m_Name: DescendingStaircase
   m_EditorClassIdentifier: Assembly-CSharp::DescendingStaircaseData
   modifierName: Escalera descendente

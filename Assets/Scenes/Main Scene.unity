@@ -4287,6 +4287,35 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DiceUpgradeManager
   availableModifiers:
   - {fileID: 11400000, guid: 332a48e6b89d5624682a1beda2f2c8f2, type: 2}
+  - {fileID: 11400000, guid: 7a8575f869dea2d44b621695fd52a17c, type: 2}
+  - {fileID: 11400000, guid: 1eb4eb65e50639a4f8cbe7d836492c75, type: 2}
+  - {fileID: 11400000, guid: d6858198f62ba1c41b971b9670a5539e, type: 2}
+  - {fileID: 11400000, guid: ba568d15fd34fda40a5b65fa01776d00, type: 2}
+  - {fileID: 11400000, guid: c44ce2a38383a08498040668540ee75d, type: 2}
+  - {fileID: 11400000, guid: e7bb53f0b72c20149b970d1a13f51b71, type: 2}
+  - {fileID: 11400000, guid: 4340f6de817caab459a3d9f527aabac0, type: 2}
+  - {fileID: 11400000, guid: 0f59c3a8485716846ba892c5dd6b7259, type: 2}
+  - {fileID: 11400000, guid: e7ce6e0cee2ec9b4596c95a6c38306b0, type: 2}
+  - {fileID: 11400000, guid: f84200bd319902149842949edcb8109a, type: 2}
+  - {fileID: 11400000, guid: 3b41d4bc46239c643913afa22fe7a618, type: 2}
+  - {fileID: 11400000, guid: f04828924cd57d54f9edab37fa743a10, type: 2}
+  - {fileID: 11400000, guid: 738f0cc297075d8438725f78462cb968, type: 2}
+  - {fileID: 11400000, guid: c58ce4fbff6db7e4189b25e252be2ee1, type: 2}
+  - {fileID: 11400000, guid: 146e85a66f2518c47aac5e603efe0ee7, type: 2}
+  - {fileID: 11400000, guid: de4eb67db8e704140bcd131af2666b0d, type: 2}
+  - {fileID: 11400000, guid: cc0c22a7a9751634db1be61844f4386f, type: 2}
+  - {fileID: 11400000, guid: d645c3d3c8ed48441aea27135099abb8, type: 2}
+  - {fileID: 11400000, guid: f97ae803e121a2342afc4b4d21b485e6, type: 2}
+  - {fileID: 11400000, guid: a5cced67eebfca6419ec362fc193935d, type: 2}
+  - {fileID: 11400000, guid: 4042c80a7614f9341910366b62ae9129, type: 2}
+  - {fileID: 11400000, guid: 9385b385ca754fe4dab6ac70437a1fa6, type: 2}
+  - {fileID: 11400000, guid: 38a804cb13af5b144b97a379b3224481, type: 2}
+  - {fileID: 11400000, guid: 0df7b1be2bf217d43a81ac399b2149ff, type: 2}
+  - {fileID: 11400000, guid: 1ec45fc185d60ef4b83033bc4b16d754, type: 2}
+  - {fileID: 11400000, guid: bcd19d08df4c7fb408f3f70b17d3f690, type: 2}
+  - {fileID: 11400000, guid: 1d4a0051703bbcc4cacf36f7aa12318d, type: 2}
+  - {fileID: 11400000, guid: c1242aa03629e2b4da894cb332574d6a, type: 2}
+  - {fileID: 11400000, guid: c9db4527766f6f34c8b9ce8942c3a525, type: 2}
   optionsPerSelection: 3
   selectionActive: 0
 --- !u!1 &1340824472

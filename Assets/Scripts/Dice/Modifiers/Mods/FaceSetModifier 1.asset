@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: ChaoticDice
+  m_Script: {fileID: 11500000, guid: cb71b5e50472b744aa58a2caa66c6f0e, type: 3}
+  m_Name: FaceSetModifier 1
   m_EditorClassIdentifier: Assembly-CSharp::FaceSetModifierData
-  modifierName: "Dado ca\xF3tico"
-  description: El dado pasa a tener 1, 1, 2, 5, 6, 6.
+  modifierName: Dado estable
+  description: '`3, 3, 3, 4, 4, 4`. Menos azar, resultados medios constantes.'
   icon: {fileID: 0}
-  faceSet: {fileID: 11400000, guid: a70c980301d583f4786a0247d4dc01c7, type: 2}
+  faceSet: {fileID: 11400000, guid: 34a2453cd5e8d4242893779f138f2f6c, type: 2}
