@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,6 +14,7 @@ public class DiceLauncher : MonoBehaviour
     [Header("Selection")]
     [SerializeField] private float selectedHeightOffset = 0.15f;
     [SerializeField] private float selectionTilt = 8f;
+    [SerializeField] private float selectionMoveDuration = 0.1f;
 
     [Header("Launch")]
     [SerializeField] private float launchForce = 5f;
@@ -36,6 +38,7 @@ public class DiceLauncher : MonoBehaviour
     private Vector3 dragCurrentWorld;
 
     private float normalHeight;
+    private Coroutine selectionMovementCoroutine;
 
     private void Awake()
     {
@@ -115,23 +118,53 @@ public class DiceLauncher : MonoBehaviour
 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-
         rb.isKinematic = true;
 
         normalHeight = transform.position.y;
 
-        transform.position += Vector3.up * selectedHeightOffset;
+        if (selectionMovementCoroutine != null)
+            StopCoroutine(selectionMovementCoroutine);
 
         float tiltX = Random.Range(-selectionTilt, selectionTilt);
         float tiltZ = Random.Range(-selectionTilt, selectionTilt);
 
-        transform.rotation = Quaternion.Euler(tiltX, 0f, tiltZ) * transform.rotation;
+        Quaternion targetRotation = Quaternion.Euler(tiltX, 0f, tiltZ) * transform.rotation;
+
+        selectionMovementCoroutine = StartCoroutine(MoveToSelectedState(targetRotation));
 
         if (TryGetMousePositionOnTray(out Vector3 mouseWorld))
         {
             dragStartWorld = mouseWorld;
             dragCurrentWorld = mouseWorld;
         }
+    }
+
+
+    private IEnumerator MoveToSelectedState(Quaternion targetRotation)
+    {
+        Vector3 startPosition = transform.position;
+        Vector3 targetPosition = startPosition + Vector3.up * selectedHeightOffset;
+
+        Quaternion startRotation = transform.rotation;
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < selectionMoveDuration)
+        {
+            elapsedTime += Time.deltaTime;
+
+            float t = Mathf.SmoothStep(0f, 1f, elapsedTime / selectionMoveDuration);
+
+            transform.position = Vector3.Lerp(startPosition, targetPosition, t);
+            transform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
+
+            yield return null;
+        }
+
+        transform.position = targetPosition;
+        transform.rotation = targetRotation;
+
+        selectionMovementCoroutine = null;
     }
 
     private void UpdateDrag()
@@ -150,6 +183,12 @@ public class DiceLauncher : MonoBehaviour
     private void ReleaseDice()
     {
         isSelected = false;
+
+        if (selectionMovementCoroutine != null)
+        {
+            StopCoroutine(selectionMovementCoroutine);
+            selectionMovementCoroutine = null;
+        }
 
         Vector3 dragVector = dragStartWorld - dragCurrentWorld;
         dragVector.y = 0f;
