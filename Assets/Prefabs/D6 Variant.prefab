@@ -1366,6 +1366,7 @@ MonoBehaviour:
   faceManager: {fileID: 0}
   selectedHeightOffset: 1
   selectionTilt: 50
+  selectionMoveDuration: 0.1
   launchForce: 10
   maxDragDistance: 4
   minimumDragDistance: 0.15
@@ -1389,7 +1390,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DiceDamageManager
   firstThrowDamage: 1
   knockbackForce: 3
-  nextThrowDamage: 1
+  previousRoll: 0
   forceNextRoll: 0
   forcedNextRollValue: 0
 --- !u!114 &3465485394495647846
