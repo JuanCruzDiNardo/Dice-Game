@@ -11,6 +11,7 @@ public class DiceLauncher : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private DiceFaceManager faceManager;
     [SerializeField] private DiceThrowVisualizer throwVisualizer;
+    [SerializeField] private MagicFloatingParticlesController particleController;
 
     [Header("Selection")]
     [SerializeField] private float selectedHeightOffset = 0.15f;
@@ -28,6 +29,7 @@ public class DiceLauncher : MonoBehaviour
     [SerializeField] private bool newValue = true;
     [SerializeField] private bool onFloor = true;
     [SerializeField] private float currentDragDistance;
+    [SerializeField] private bool particlesActive = true;
 
     [Header("Face Value")]
     [SerializeField] private int diceValue;
@@ -39,7 +41,7 @@ public class DiceLauncher : MonoBehaviour
     private Vector3 dragCurrentWorld;
 
     private float normalHeight;
-    private Coroutine selectionMovementCoroutine;
+    private Coroutine selectionMovementCoroutine;    
 
     private void Awake()
     {
@@ -54,6 +56,9 @@ public class DiceLauncher : MonoBehaviour
 
         if (throwVisualizer == null)
             throwVisualizer = GetComponentInChildren<DiceThrowVisualizer>();
+
+        if (particleController == null)
+            particleController = GetComponentInChildren<MagicFloatingParticlesController>();
 
         normalHeight = transform.position.y;
     }
@@ -76,9 +81,12 @@ public class DiceLauncher : MonoBehaviour
             onFloor = false;
         }
 
-        if (rb.angularVelocity == Vector3.zero && rb.linearVelocity == Vector3.zero && onFloor)
+        bool stopped = rb.angularVelocity == Vector3.zero && rb.linearVelocity == Vector3.zero && onFloor && !isSelected;
+
+        if (stopped)
         {
             isStill = true;
+            SetParticlesActive(false);
 
             if (!newValue)
                 return;
@@ -92,6 +100,7 @@ public class DiceLauncher : MonoBehaviour
         else
         {
             isStill = false;
+            SetParticlesActive(true);
         }
     }
 
@@ -119,6 +128,8 @@ public class DiceLauncher : MonoBehaviour
     private void SelectDice()
     {
         isSelected = true;
+
+        SetParticlesActive(true);
 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
@@ -254,6 +265,19 @@ public class DiceLauncher : MonoBehaviour
 
         worldPosition = Vector3.zero;
         return false;
+    }
+
+    private void SetParticlesActive(bool active)
+    {
+        if (particleController == null || particlesActive == active)
+            return;
+
+        particlesActive = active;
+
+        if (active)
+            particleController.StartEmission();
+        else
+            particleController.StopEmission();
     }
 
     private void OnCollisionEnter(Collision collision)

@@ -63,10 +63,7 @@ public sealed class MagicFloatingParticlesController : MonoBehaviour
 
         float sparkRate = emission.EmissionRate * visual.SparkProportion;
         float moteRate = emission.EmissionRate - sparkRate;
-        int sparkCapacity = Mathf.Clamp(
-            Mathf.RoundToInt(emission.MaxParticles * visual.SparkProportion),
-            0,
-            emission.MaxParticles);
+        int sparkCapacity = Mathf.Clamp(Mathf.RoundToInt(emission.MaxParticles * visual.SparkProportion), 0, emission.MaxParticles);
         int moteCapacity = emission.MaxParticles - sparkCapacity;
 
         ParticleSystemRenderer motesRenderer = MagicParticleSystemConfigurator.Configure(
@@ -111,12 +108,7 @@ public sealed class MagicFloatingParticlesController : MonoBehaviour
             SparkOutlineSeed);
     }
 
-    public void Initialize(
-        ParticleSystem motesSystem,
-        ParticleSystem sparksSystem,
-        Material particleMaterial,
-        Texture2D moteTexture,
-        Texture2D sparkTexture)
+    public void Initialize(ParticleSystem motesSystem, ParticleSystem sparksSystem, Material particleMaterial, Texture2D moteTexture, Texture2D sparkTexture)
     {
         motes = motesSystem;
         sparks = sparksSystem;
@@ -124,6 +116,13 @@ public sealed class MagicFloatingParticlesController : MonoBehaviour
         visual ??= new MagicParticleVisualSettings();
         visual.SetTextures(moteTexture, sparkTexture);
         RefreshEffect();
+    }
+
+    public void StartEmission()
+    {
+        ResolveReferences();
+        StartEmitting(motes);
+        StartEmitting(sparks);
     }
 
     public void StopEmission()
@@ -183,6 +182,7 @@ public sealed class MagicFloatingParticlesController : MonoBehaviour
             return;
 
         ParticleSystemRenderer renderer = motes.GetComponent<ParticleSystemRenderer>();
+
         if (renderer != null)
             sharedParticleMaterial = renderer.sharedMaterial;
     }
@@ -193,13 +193,20 @@ public sealed class MagicFloatingParticlesController : MonoBehaviour
         return child != null ? child.GetComponent<ParticleSystem>() : null;
     }
 
+    private static void StartEmitting(ParticleSystem target)
+    {
+        if (target == null)
+            return;
+
+        //if (!target.isPlaying)
+            target.Play();
+    }
+
     private static void StopEmitting(ParticleSystem target)
     {
         if (target == null)
             return;
 
-        target.Stop(
-            withChildren: false,
-            ParticleSystemStopBehavior.StopEmitting);
+        target.Stop(false, ParticleSystemStopBehavior.StopEmitting);
     }
 }

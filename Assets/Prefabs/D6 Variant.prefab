@@ -1365,6 +1365,7 @@ MonoBehaviour:
   mainCamera: {fileID: 0}
   faceManager: {fileID: 0}
   throwVisualizer: {fileID: 0}
+  particleController: {fileID: 0}
   selectedHeightOffset: 1
   selectionTilt: 50
   selectionMoveDuration: 0.1
@@ -1376,6 +1377,7 @@ MonoBehaviour:
   newValue: 0
   onFloor: 1
   currentDragDistance: 0
+  particlesActive: 1
   diceValue: 0
 --- !u!114 &2739120816684142515
 MonoBehaviour:
