@@ -1364,6 +1364,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   mainCamera: {fileID: 0}
   faceManager: {fileID: 0}
+  throwVisualizer: {fileID: 0}
   selectedHeightOffset: 1
   selectionTilt: 50
   selectionMoveDuration: 0.1

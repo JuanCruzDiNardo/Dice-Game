@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using HandDrawnHealthBar;
 
 [RequireComponent(typeof(Collider))]
 public class Nexus : MonoBehaviour
@@ -9,6 +10,9 @@ public class Nexus : MonoBehaviour
     [Header("Health")]
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float currentHealth;
+
+    [Header("UI")]
+    [SerializeField] private HealthBarController healthBar;
 
     [Header("Modifiers")]
     [SerializeField] private float maxHealthMultiplier = 1f;
@@ -46,6 +50,8 @@ public class Nexus : MonoBehaviour
         Instance = this;
 
         currentHealth = MaxHealth;
+
+        UpdateHealthBar();
     }
 
     private void Update()
@@ -66,13 +72,13 @@ public class Nexus : MonoBehaviour
         currentHealth -= finalDamage;
         currentHealth = Mathf.Max(0f, currentHealth);
 
+        UpdateHealthBar();
+
         OnDamaged?.Invoke(finalDamage);
         OnHealthChanged?.Invoke(currentHealth);
 
         if (currentHealth <= 0f)
-        {
             DestroyNexus();
-        }
     }
 
     public void Heal(float amount)
@@ -89,11 +95,13 @@ public class Nexus : MonoBehaviour
 
         float healedAmount = currentHealth - previousHealth;
 
-        if (healedAmount > 0f)
-        {
-            OnHealed?.Invoke(healedAmount);
-            OnHealthChanged?.Invoke(currentHealth);
-        }
+        if (healedAmount <= 0f)
+            return;
+
+        UpdateHealthBar();
+
+        OnHealed?.Invoke(healedAmount);
+        OnHealthChanged?.Invoke(currentHealth);
     }
 
     public void SetMaxHealthMultiplier(float multiplier)
@@ -101,6 +109,8 @@ public class Nexus : MonoBehaviour
         maxHealthMultiplier = Mathf.Max(0.01f, multiplier);
 
         currentHealth = Mathf.Min(currentHealth, MaxHealth);
+
+        UpdateHealthBar();
 
         OnHealthChanged?.Invoke(currentHealth);
     }
@@ -120,12 +130,22 @@ public class Nexus : MonoBehaviour
         return isDestroyed;
     }
 
+    private void UpdateHealthBar()
+    {
+        if (healthBar == null)
+            return;
+
+        healthBar.SetHealth(currentHealth, MaxHealth);
+    }
+
     private void DestroyNexus()
     {
         if (isDestroyed)
             return;
 
         isDestroyed = true;
+
+        UpdateHealthBar();
 
         OnDestroyed?.Invoke();
 

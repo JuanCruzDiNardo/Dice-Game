@@ -10,6 +10,7 @@ public class DiceLauncher : MonoBehaviour
     [Header("References")]
     [SerializeField] private Camera mainCamera;
     [SerializeField] private DiceFaceManager faceManager;
+    [SerializeField] private DiceThrowVisualizer throwVisualizer;
 
     [Header("Selection")]
     [SerializeField] private float selectedHeightOffset = 0.15f;
@@ -50,6 +51,9 @@ public class DiceLauncher : MonoBehaviour
 
         if (mainCamera == null)
             mainCamera = Camera.main;
+
+        if (throwVisualizer == null)
+            throwVisualizer = GetComponentInChildren<DiceThrowVisualizer>();
 
         normalHeight = transform.position.y;
     }
@@ -137,8 +141,13 @@ public class DiceLauncher : MonoBehaviour
             dragStartWorld = mouseWorld;
             dragCurrentWorld = mouseWorld;
         }
-    }
 
+        if (throwVisualizer != null)
+        {
+            throwVisualizer.Show();
+            throwVisualizer.UpdateVisual(transform.position, transform.position, 0f);
+        }
+    }
 
     private IEnumerator MoveToSelectedState(Quaternion targetRotation)
     {
@@ -178,11 +187,29 @@ public class DiceLauncher : MonoBehaviour
         dragVector.y = 0f;
 
         currentDragDistance = Mathf.Min(dragVector.magnitude, maxDragDistance);
+
+        if (throwVisualizer == null)
+            return;
+
+        Vector3 visualDirection = dragCurrentWorld - dragStartWorld;
+        visualDirection.y = 0f;
+
+        Vector3 visualEndPosition = transform.position;
+
+        if (visualDirection.sqrMagnitude > 0.001f)
+            visualEndPosition += visualDirection.normalized * currentDragDistance;
+
+        float normalizedPower = maxDragDistance > 0f ? currentDragDistance / maxDragDistance : 0f;
+
+        throwVisualizer.UpdateVisual(transform.position, visualEndPosition, normalizedPower);
     }
 
     private void ReleaseDice()
     {
         isSelected = false;
+
+        if (throwVisualizer != null)
+            throwVisualizer.Hide();
 
         if (selectionMovementCoroutine != null)
         {
