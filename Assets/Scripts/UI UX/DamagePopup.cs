@@ -40,8 +40,6 @@ public class DamagePopup : MonoBehaviour
         if (mainCamera == null)
             return;
 
-        transform.rotation = Quaternion.LookRotation(
-            transform.position - mainCamera.transform.position
-        );
+        transform.eulerAngles = new Vector3(90, 0, 0);
     }
 }

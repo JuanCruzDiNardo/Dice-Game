@@ -92,14 +92,14 @@ public sealed class HandDrawnOutlineEffect : BaseMeshEffect
         graphic.SetVerticesDirty();
     }
 
-    protected override void OnValidate()
+    /*protected override void OnValidate()
     {
         base.OnValidate();
         thickness = Mathf.Clamp(thickness, 0f, 12f);
         framesPerSecond = Mathf.Clamp(framesPerSecond, 1f, 24f);
         variationCount = Mathf.Clamp(variationCount, 1, 8);
         graphic?.SetVerticesDirty();
-    }
+    }*/
 
     private void AppendOutlineCopy(Vector2 offset)
     {

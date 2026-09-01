@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: LuckyNumber
   m_EditorClassIdentifier: Assembly-CSharp::LuckyNumberData
   modifierName: "N\xFAmero de la suerte"
-  description: "una Cara Aleatoria; cuando sale, hace \xD74."
+  description: "Una cara aleatoria misteriosa cuando sale, hace \xD74."
   icon: {fileID: 0}
   multiplier: 4

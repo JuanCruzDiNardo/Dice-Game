@@ -277,11 +277,17 @@ public class Enemy : MonoBehaviour
 
     private void ShowDamagePopup(float damage)
     {
-        DamagePopup popup = Instantiate(
+        GameObject popupGO = Instantiate(
             damagePopupPrefab,
             damagePopupPoint.position,
-            Quaternion.identity
-        ).GetComponent<DamagePopup>();
+            Quaternion.identity,
+            damagePopupPoint
+        );
+        
+        popupGO.transform.localEulerAngles = new Vector3(90, 0, 0);
+        popupGO.transform.localScale = new Vector3(3,3,3);
+
+        DamagePopup popup = popupGO.GetComponent<DamagePopup>();
 
         popup.Setup(damage);
     }

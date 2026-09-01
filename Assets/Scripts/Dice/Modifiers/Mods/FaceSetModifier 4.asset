@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: FaceSetModifier 4
   m_EditorClassIdentifier: Assembly-CSharp::FaceSetModifierData
   modifierName: "Especializaci\xF3n par"
-  description: '`2, 2, 4, 4, 6, 6`.'
+  description: El dado pasa a tener `2, 2, 4, 4, 6, 6`.
   icon: {fileID: 0}
   faceSet: {fileID: 11400000, guid: 9312a9d2304787e47ae9983a3423d57f, type: 2}

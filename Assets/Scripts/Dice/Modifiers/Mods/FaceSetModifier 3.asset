@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: FaceSetModifier 3
   m_EditorClassIdentifier: Assembly-CSharp::FaceSetModifierData
   modifierName: Todo o nada
-  description: '`1, 1, 1, 1, 6, 6`.'
+  description: El dado pasa a tener `1, 1, 1, 1, 6, 6`.
   icon: {fileID: 0}
   faceSet: {fileID: 0}

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -56,6 +57,13 @@ public class EnemyVisualController : MonoBehaviour
     [SerializeField]
     private int bloodSortingOffset = -2;
 
+    [Header("Death Fade")]
+    [SerializeField, Min(0f)]
+    private float deathVisibleDuration = 0.5f;
+
+    [SerializeField, Min(0.01f)]
+    private float deathFadeDuration = 1f;
+
     public VisualState CurrentState { get; private set; }
 
     public bool IsDead => CurrentState == VisualState.Dead;
@@ -77,6 +85,9 @@ public class EnemyVisualController : MonoBehaviour
 
     private void Update()
     {
+        if (CurrentState == VisualState.Dead)
+            return;
+
         UpdateWalkingAnimation();
     }
 
@@ -113,7 +124,7 @@ public class EnemyVisualController : MonoBehaviour
         enabled = true;
     }
 
-    public void PlayDeath()
+    /*public void PlayDeath()
     {
         if (CurrentState == VisualState.Dead)
             return;
@@ -127,6 +138,62 @@ public class EnemyVisualController : MonoBehaviour
         SpawnWeapon();
 
         // El cadáver deja de ejecutar Update.
+        enabled = false;
+    }*/
+
+    public void PlayDeath()
+    {
+        if (CurrentState == VisualState.Dead)
+            return;
+
+        CurrentState = VisualState.Dead;
+
+        if (deadSprite != null)
+            bodyRenderer.sprite = deadSprite;
+
+        SpawnBlood();
+        SpawnWeapon();
+
+        StopAllCoroutines();
+        StartCoroutine(DeathFadeRoutine());
+    }
+
+    private IEnumerator DeathFadeRoutine()
+    {
+
+        // Mantener visible el cadáver un momento.
+        if (deathVisibleDuration > 0f)
+            yield return new WaitForSeconds(deathVisibleDuration);
+
+        Color originalColor = bodyRenderer.color;
+
+        float timer = 0f;
+
+        while (timer < deathFadeDuration)
+        {
+            timer += Time.deltaTime;
+
+            float normalizedTime =
+                Mathf.Clamp01(timer / deathFadeDuration);
+
+            Color currentColor = originalColor;
+
+            currentColor.a =
+                Mathf.Lerp(
+                    originalColor.a,
+                    0f,
+                    normalizedTime
+                );
+
+            bodyRenderer.color = currentColor;
+
+            yield return null;
+        }
+
+        Color finalColor = bodyRenderer.color;
+        finalColor.a = 0f;
+        bodyRenderer.color = finalColor;
+
         enabled = false;
     }
 

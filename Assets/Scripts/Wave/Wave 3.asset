@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b061f8ac177b6c4eb7cf0e11535e262, type: 3}
   m_Name: Wave 3
   m_EditorClassIdentifier: Assembly-CSharp::WaveData
-  duration: 50
+  duration: 10
   enemies:
-  - enemyData: {fileID: 11400000, guid: 321ab1ffdafc96240bf4adeac5209821, type: 2}
-    amount: 200
+  - enemyData: {fileID: 11400000, guid: 99a55c18cd5832446848f5cbd9e85c72, type: 2}
+    amount: 30

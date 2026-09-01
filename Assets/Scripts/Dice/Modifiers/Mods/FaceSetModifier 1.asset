@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: FaceSetModifier 1
   m_EditorClassIdentifier: Assembly-CSharp::FaceSetModifierData
   modifierName: Dado estable
-  description: '`3, 3, 3, 4, 4, 4`. Menos azar, resultados medios constantes.'
+  description: El dado pasa a tener `3, 3, 3, 4, 4, 4`. Menos azar, resultados medios
+    constantes.
   icon: {fileID: 0}
   faceSet: {fileID: 11400000, guid: 34a2453cd5e8d4242893779f138f2f6c, type: 2}

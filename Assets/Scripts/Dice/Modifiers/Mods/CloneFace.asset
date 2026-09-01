@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: CloneFace
   m_EditorClassIdentifier: Assembly-CSharp::CloneFaceData
   modifierName: "Clonaci\xF3n"
-  description: "valor aleatoria y reemplazas otra cara aleatoria por ese n\xFAmero."
+  description: Reemplaza una cara aleatoria por un clon de otra cara aleatoria
   icon: {fileID: 0}

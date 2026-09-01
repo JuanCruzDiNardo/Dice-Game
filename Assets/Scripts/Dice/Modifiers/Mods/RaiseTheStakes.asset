@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: RaiseTheStakes
   m_EditorClassIdentifier: Assembly-CSharp::RaiseTheStakesData
   modifierName: Aumentar la apuesta
-  description: "Si el resultado es mayor al anterior, obtiene +10 de da\xF1o .Si
+  description: "Si el resultado es mayor al anterior, obtiene +10 de da\xF1o. Si
     el resultado es menor al anterior, obtiene -10 de da\xF1o."
   icon: {fileID: 0}
   bonusDamage: 10
