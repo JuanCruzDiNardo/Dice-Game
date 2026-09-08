@@ -31,6 +31,10 @@ public class Enemy : MonoBehaviour
     private Nexus nexus;
 
     private float currentHealth;
+    private float runtimeMaxHealth;
+    private float runtimeMoveSpeed;
+    private float runtimeNexusDamage;
+
     private bool isDead;
     private bool isInitialized;
 
@@ -41,8 +45,9 @@ public class Enemy : MonoBehaviour
     private Vector3 knockbackVelocity;
 
     public float CurrentHealth => currentHealth;
-    public float MaxHealth => data != null ? data.maxHealth : 0f;
-    public float DamageToNexus => data != null ? data.nexusDamage : 0f;
+    public float MaxHealth => runtimeMaxHealth;
+    public float DamageToNexus => runtimeNexusDamage;
+    public float MoveSpeed => runtimeMoveSpeed;
     public bool IsDead => isDead;
     public EnemyData Data => data;
 
@@ -63,7 +68,10 @@ public class Enemy : MonoBehaviour
 
         OnDeath += HandleDeathVisuals;
 
-        trayBounds = GameObject.Find("TrayFloor").GetComponent<BoxCollider>();
+        GameObject trayFloor = GameObject.Find("TrayFloor");
+
+        if (trayFloor != null)
+            trayBounds = trayFloor.GetComponent<BoxCollider>();
 
         if (enemyAudio == null)
             enemyAudio = GetComponent<EnemyAudio>();
@@ -82,6 +90,11 @@ public class Enemy : MonoBehaviour
 
     public void Initialize(EnemyData enemyData)
     {
+        Initialize(enemyData, 1f, 1f, 1f);
+    }
+
+    public void Initialize(EnemyData enemyData, float healthMultiplier, float damageMultiplier, float speedMultiplier)
+    {
         if (enemyData == null)
         {
             Debug.LogError($"{name} received a null EnemyData.");
@@ -89,7 +102,13 @@ public class Enemy : MonoBehaviour
         }
 
         data = enemyData;
-        currentHealth = data.maxHealth;
+
+        runtimeMaxHealth = data.maxHealth * Mathf.Max(0f, healthMultiplier);
+        runtimeNexusDamage = data.nexusDamage * Mathf.Max(0f, damageMultiplier);
+        runtimeMoveSpeed = data.moveSpeed * Mathf.Max(0f, speedMultiplier);
+
+        currentHealth = runtimeMaxHealth;
+
         isDead = false;
         isInitialized = true;
         knockbackVelocity = Vector3.zero;
@@ -121,19 +140,11 @@ public class Enemy : MonoBehaviour
         if (directionToNexus.sqrMagnitude > 0.001f)
             directionToNexus.Normalize();
 
-        // Face the Nexus
         if (directionToNexus.sqrMagnitude > 0.001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(directionToNexus);
-
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                targetRotation,
-                rotationSpeed * Time.deltaTime
-            );
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
-
-
 
         Vector3 separationDirection = CalculateSeparation();
 
@@ -143,7 +154,7 @@ public class Enemy : MonoBehaviour
         if (movementDirection.sqrMagnitude > 0.001f)
             movementDirection.Normalize();
 
-        Vector3 normalMovement = movementDirection * data.moveSpeed;
+        Vector3 normalMovement = movementDirection * runtimeMoveSpeed;
         Vector3 finalMovement = normalMovement + knockbackVelocity;
         Vector3 targetPosition = transform.position + finalMovement * Time.deltaTime;
 
@@ -163,7 +174,6 @@ public class Enemy : MonoBehaviour
 
         float minX = bounds.min.x + trayEdgePadding;
         float maxX = bounds.max.x - trayEdgePadding;
-
         float minZ = bounds.min.z + trayEdgePadding;
         float maxZ = bounds.max.z - trayEdgePadding;
 
@@ -173,8 +183,6 @@ public class Enemy : MonoBehaviour
         position.x = Mathf.Clamp(position.x, minX, maxX);
         position.z = Mathf.Clamp(position.z, minZ, maxZ);
 
-        // If knockback tried to push us through an edge,
-        // remove that component of the knockback.
         if (!Mathf.Approximately(originalX, position.x))
             knockbackVelocity.x = 0f;
 
@@ -224,7 +232,7 @@ public class Enemy : MonoBehaviour
             if (distance >= separationRadius)
                 continue;
 
-            float weight = 1f - (distance / separationRadius);
+            float weight = 1f - distance / separationRadius;
 
             separation += awayDirection.normalized * weight;
             validNeighbours++;
@@ -266,30 +274,27 @@ public class Enemy : MonoBehaviour
             Die(EnemyDeathType.Dice);
             return;
         }
-        else
-        {
-            if (enemyAudio != null)
-                enemyAudio.PlayDamage();
-        }
+
+        if (enemyAudio != null)
+            enemyAudio.PlayDamage();
 
         ApplyKnockback(knockbackDirection, knockbackForce);
     }
 
     private void ShowDamagePopup(float damage)
     {
-        GameObject popupGO = Instantiate(
-            damagePopupPrefab,
-            damagePopupPoint.position,
-            Quaternion.identity,
-            damagePopupPoint
-        );
-        
-        popupGO.transform.localEulerAngles = new Vector3(90, 0, 0);
-        popupGO.transform.localScale = new Vector3(3,3,3);
+        if (damagePopupPrefab == null || damagePopupPoint == null)
+            return;
+
+        GameObject popupGO = Instantiate(damagePopupPrefab, damagePopupPoint.position, Quaternion.identity, damagePopupPoint);
+
+        popupGO.transform.localEulerAngles = new Vector3(90f, 0f, 0f);
+        popupGO.transform.localScale = new Vector3(3f, 3f, 3f);
 
         DamagePopup popup = popupGO.GetComponent<DamagePopup>();
 
-        popup.Setup(damage);
+        if (popup != null)
+            popup.Setup(damage);
     }
 
     private void ApplyKnockback(Vector3 direction, float force)
@@ -323,7 +328,7 @@ public class Enemy : MonoBehaviour
         if (!other.CompareTag("Nexus"))
             return;
 
-        nexus.TakeDamage(data.nexusDamage);
+        nexus.TakeDamage(runtimeNexusDamage);
         Die(EnemyDeathType.Nexus);
     }
 

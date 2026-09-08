@@ -7,6 +7,11 @@ public class EnemySpawner : MonoBehaviour
 
     public Enemy SpawnEnemy(EnemyData enemyData)
     {
+        return SpawnEnemy(enemyData, 1f, 1f, 1f);
+    }
+
+    public Enemy SpawnEnemy(EnemyData enemyData, float healthMultiplier, float damageMultiplier, float speedMultiplier)
+    {
         if (enemyPrefab == null)
         {
             Debug.LogError($"{name} has no Enemy prefab assigned.");
@@ -20,7 +25,7 @@ public class EnemySpawner : MonoBehaviour
         }
 
         Enemy enemy = Instantiate(enemyPrefab, transform.position, Quaternion.identity);
-        enemy.Initialize(enemyData);
+        enemy.Initialize(enemyData, healthMultiplier, damageMultiplier, speedMultiplier);
 
         return enemy;
     }

@@ -70,6 +70,10 @@ public class GameManager : MonoBehaviour
         HandlePauseInput();
     }
 
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+
     private void InitializeGame()
     {
         Time.timeScale = 1f;
@@ -85,6 +89,10 @@ public class GameManager : MonoBehaviour
 
         ChangeState(GameState.Playing);
     }
+
+    // =========================================================
+    // PAUSE
+    // =========================================================
 
     private void HandlePauseInput()
     {
@@ -127,13 +135,47 @@ public class GameManager : MonoBehaviour
         if (CurrentState != GameState.Paused)
             return;
 
+        ResumePlayingState();
+    }
+
+    private void ResumePlayingState()
+    {
         Time.timeScale = 1f;
 
         if (pausePanel != null)
             pausePanel.SetActive(false);
 
+        if (victoryPanel != null)
+            victoryPanel.SetActive(false);
+
+        if (defeatPanel != null)
+            defeatPanel.SetActive(false);
+
         ChangeState(GameState.Playing);
     }
+
+    // =========================================================
+    // INFINITE MODE
+    // =========================================================
+
+    public void ContinueInfiniteMode()
+    {
+        if (CurrentState != GameState.Victory)
+            return;
+
+        if (waveManager == null)
+        {
+            Debug.LogWarning("No hay un WaveManager asignado.");
+            return;
+        }
+
+        ResumePlayingState();
+        waveManager.EnableInfiniteMode();
+    }
+
+    // =========================================================
+    // GAME STATE EVENTS
+    // =========================================================
 
     private void HandleNexusDestroyed()
     {
@@ -150,6 +192,10 @@ public class GameManager : MonoBehaviour
 
         Victory();
     }
+
+    // =========================================================
+    // VICTORY / DEFEAT
+    // =========================================================
 
     private void Victory()
     {
@@ -181,6 +227,10 @@ public class GameManager : MonoBehaviour
         Debug.Log("DERROTA");
     }
 
+    // =========================================================
+    // STATE
+    // =========================================================
+
     private void ChangeState(GameState newState)
     {
         if (CurrentState == newState)
@@ -189,6 +239,10 @@ public class GameManager : MonoBehaviour
         CurrentState = newState;
         OnGameStateChanged?.Invoke(CurrentState);
     }
+
+    // =========================================================
+    // SCENE CONTROL
+    // =========================================================
 
     public void RestartGame()
     {
@@ -225,6 +279,10 @@ public class GameManager : MonoBehaviour
         Application.Quit();
 #endif
     }
+
+    // =========================================================
+    // STATE QUERIES
+    // =========================================================
 
     public bool IsGamePlaying()
     {
