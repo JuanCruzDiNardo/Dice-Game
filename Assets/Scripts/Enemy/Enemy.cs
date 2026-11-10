@@ -1,9 +1,17 @@
 using System;
+using Unity.Profiling;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
 public class Enemy : MonoBehaviour
 {
+    private static readonly ProfilerMarker MovementMarker = new("DiceGame.Enemy.Move");
+    private static readonly ProfilerMarker SeparationMarker = new("DiceGame.Enemy.Separation");
+
+#if UNITY_EDITOR
+    internal bool KeepAliveForBenchmark { get; set; }
+#endif
+
     [Header("Configuration")]
     [SerializeField] private EnemyData data;
 
@@ -125,7 +133,8 @@ public class Enemy : MonoBehaviour
         if (nexus == null || nexus.IsDestroyed())
             return;
 
-        Move();
+        using (MovementMarker.Auto())
+            Move();
     }
 
     // =========================================================
@@ -146,7 +155,9 @@ public class Enemy : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
 
-        Vector3 separationDirection = CalculateSeparation();
+        Vector3 separationDirection;
+        using (SeparationMarker.Auto())
+            separationDirection = CalculateSeparation();
 
         Vector3 movementDirection = directionToNexus + separationDirection * separationStrength;
         movementDirection.y = 0f;
@@ -255,6 +266,11 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(float damage, Vector3 knockbackDirection, float knockbackForce)
     {
+#if UNITY_EDITOR
+        if (KeepAliveForBenchmark)
+            return;
+#endif
+
         if (!isInitialized)
             return;
 
@@ -327,6 +343,11 @@ public class Enemy : MonoBehaviour
 
         if (!other.CompareTag("Nexus"))
             return;
+
+#if UNITY_EDITOR
+        if (KeepAliveForBenchmark)
+            return;
+#endif
 
         nexus.TakeDamage(runtimeNexusDamage);
         Die(EnemyDeathType.Nexus);
