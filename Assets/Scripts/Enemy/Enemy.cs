@@ -10,6 +10,24 @@ public class Enemy : MonoBehaviour
 
 #if UNITY_EDITOR
     internal bool KeepAliveForBenchmark { get; set; }
+    internal bool UseBatchedMovement { get; set; }
+    internal bool CanMoveInBenchmark => isActiveAndEnabled && isInitialized && !isDead && nexus != null && !nexus.IsDestroyed();
+    internal float BenchmarkSeparationRadius => separationRadius;
+    internal int BenchmarkNeighbourCapacity => nearbyColliders.Length;
+    internal Collider[] BenchmarkColliders => enemyColliders;
+    internal Vector3 BenchmarkFallbackDirection => overlapFallbackDirection;
+
+    internal int FindBenchmarkNeighbours(Vector3 position, out Collider[] hits)
+    {
+        hits = nearbyColliders;
+        return FindNearbyColliders(position);
+    }
+
+    internal void ApplyBenchmarkMovement(Vector3 separation)
+    {
+        using (MovementMarker.Auto())
+            Move(separation);
+    }
 #endif
 
     [Header("Configuration")]
@@ -124,6 +142,11 @@ public class Enemy : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_EDITOR
+        if (UseBatchedMovement)
+            return;
+#endif
+
         if (!isInitialized)
             return;
 
@@ -141,7 +164,7 @@ public class Enemy : MonoBehaviour
     // MOVEMENT
     // =========================================================
 
-    private void Move()
+    private void Move(Vector3? precomputedSeparation = null)
     {
         Vector3 directionToNexus = nexus.Position - transform.position;
         directionToNexus.y = 0f;
@@ -156,8 +179,15 @@ public class Enemy : MonoBehaviour
         }
 
         Vector3 separationDirection;
-        using (SeparationMarker.Auto())
-            separationDirection = CalculateSeparation();
+        if (precomputedSeparation.HasValue)
+        {
+            separationDirection = precomputedSeparation.Value;
+        }
+        else
+        {
+            using (SeparationMarker.Auto())
+                separationDirection = CalculateSeparation();
+        }
 
         Vector3 movementDirection = directionToNexus + separationDirection * separationStrength;
         movementDirection.y = 0f;
@@ -203,9 +233,14 @@ public class Enemy : MonoBehaviour
         return position;
     }
 
+    private int FindNearbyColliders(Vector3 position)
+    {
+        return Physics.OverlapSphereNonAlloc(position, separationRadius, nearbyColliders, enemyLayer, QueryTriggerInteraction.Collide);
+    }
+
     private Vector3 CalculateSeparation()
     {
-        int nearbyCount = Physics.OverlapSphereNonAlloc(transform.position, separationRadius, nearbyColliders, enemyLayer, QueryTriggerInteraction.Collide);
+        int nearbyCount = FindNearbyColliders(transform.position);
 
         Vector3 separation = Vector3.zero;
         int validNeighbours = 0;

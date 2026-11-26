@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Unity.Profiling;
+using Unity.Burst;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -13,6 +14,18 @@ public sealed class EnemyBaselineBenchmark : MonoBehaviour
 {
     private const string MainScene = "Assets/Scenes/Main Scene.unity";
     private const string PendingCount = "DiceGame.EnemyBaselineBenchmark.PendingCount";
+    private const string PendingMethod = "DiceGame.Benchmark.Method";
+    private const string Suite = "DiceGame.Benchmark.Suite";
+    private const string SuiteIndex = "DiceGame.Benchmark.SuiteIndex";
+    private const string SuiteSucceeded = "DiceGame.Benchmark.SuiteSucceeded";
+    private const string SuiteQuit = "DiceGame.Benchmark.SuiteQuit";
+    private const string MenuRoot = "Dice Game/Rendimiento/";
+    private static readonly int[] Loads = { 100, 500, 1000 };
+    private static readonly EnemyBenchmarkMethod[] Methods =
+    {
+        EnemyBenchmarkMethod.Original, EnemyBenchmarkMethod.Sequential,
+        EnemyBenchmarkMethod.Jobs, EnemyBenchmarkMethod.JobsBurst, EnemyBenchmarkMethod.Ecs
+    };
     private const int Seed = 12345;
     private const float WarmupSeconds = 2f;
     private const float SampleSeconds = 10f;
@@ -20,6 +33,11 @@ public sealed class EnemyBaselineBenchmark : MonoBehaviour
 
     private readonly List<float> frameTimes = new(4096);
     private Enemy[] enemies;
+    private EnemyBenchmarkMethod method;
+    private EnemySeparationBatch batch;
+    private string suiteId;
+    private bool profiled;
+    private bool finished;
     private double warmupStart = -1;
     private double sampledSeconds;
     private bool measuring;
@@ -27,21 +45,131 @@ public sealed class EnemyBaselineBenchmark : MonoBehaviour
     private int previousTargetFrameRate;
     private bool changedFrameSettings;
 
-    [MenuItem("Dice Game/Rendimiento/Medir 100 enemigos")]
-    private static void Measure100() => EnterBenchmark(100);
+    [MenuItem(MenuRoot + "Original/100 enemigos")]
+    private static void Original100() => EnterBenchmark(100, EnemyBenchmarkMethod.Original);
+    [MenuItem(MenuRoot + "Original/500 enemigos")]
+    private static void Original500() => EnterBenchmark(500, EnemyBenchmarkMethod.Original);
+    [MenuItem(MenuRoot + "Original/1000 enemigos")]
+    private static void Original1000() => EnterBenchmark(1000, EnemyBenchmarkMethod.Original);
 
-    [MenuItem("Dice Game/Rendimiento/Medir 500 enemigos")]
-    private static void Measure500() => EnterBenchmark(500);
+    [MenuItem(MenuRoot + "Secuencial por lotes/100 enemigos")]
+    private static void Sequential100() => EnterBenchmark(100, EnemyBenchmarkMethod.Sequential);
+    [MenuItem(MenuRoot + "Secuencial por lotes/500 enemigos")]
+    private static void Sequential500() => EnterBenchmark(500, EnemyBenchmarkMethod.Sequential);
+    [MenuItem(MenuRoot + "Secuencial por lotes/1000 enemigos")]
+    private static void Sequential1000() => EnterBenchmark(1000, EnemyBenchmarkMethod.Sequential);
 
-    [MenuItem("Dice Game/Rendimiento/Medir 1000 enemigos")]
-    private static void Measure1000() => EnterBenchmark(1000);
+    [MenuItem(MenuRoot + "Jobs/100 enemigos")]
+    private static void Jobs100() => EnterBenchmark(100, EnemyBenchmarkMethod.Jobs);
+    [MenuItem(MenuRoot + "Jobs/500 enemigos")]
+    private static void Jobs500() => EnterBenchmark(500, EnemyBenchmarkMethod.Jobs);
+    [MenuItem(MenuRoot + "Jobs/1000 enemigos")]
+    private static void Jobs1000() => EnterBenchmark(1000, EnemyBenchmarkMethod.Jobs);
 
-    private static void EnterBenchmark(int count)
+    [MenuItem(MenuRoot + "Jobs + Burst/100 enemigos")]
+    private static void Burst100() => EnterBenchmark(100, EnemyBenchmarkMethod.JobsBurst);
+    [MenuItem(MenuRoot + "Jobs + Burst/500 enemigos")]
+    private static void Burst500() => EnterBenchmark(500, EnemyBenchmarkMethod.JobsBurst);
+    [MenuItem(MenuRoot + "Jobs + Burst/1000 enemigos")]
+    private static void Burst1000() => EnterBenchmark(1000, EnemyBenchmarkMethod.JobsBurst);
+
+    [MenuItem(MenuRoot + "ECS + Jobs + Burst/100 enemigos")]
+    private static void Ecs100() => EnterBenchmark(100, EnemyBenchmarkMethod.Ecs);
+    [MenuItem(MenuRoot + "ECS + Jobs + Burst/500 enemigos")]
+    private static void Ecs500() => EnterBenchmark(500, EnemyBenchmarkMethod.Ecs);
+    [MenuItem(MenuRoot + "ECS + Jobs + Burst/1000 enemigos")]
+    private static void Ecs1000() => EnterBenchmark(1000, EnemyBenchmarkMethod.Ecs);
+
+    [MenuItem(MenuRoot + "Medir todos los modos y cargas")]
+    private static void MeasureAll() => BeginSuite(false);
+
+    public static void RunSuiteFromCommandLine()
+    {
+        EditorSceneManager.OpenScene(MainScene);
+        BeginSuite(true);
+    }
+
+    [InitializeOnLoadMethod]
+    private static void RegisterSuiteCallback()
+    {
+        EditorApplication.playModeStateChanged -= ContinueSuite;
+        EditorApplication.playModeStateChanged += ContinueSuite;
+    }
+
+    private static void BeginSuite(bool quitWhenFinished)
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode ||
+            !string.IsNullOrEmpty(SessionState.GetString(Suite, "")))
+        {
+            Debug.LogWarning("Benchmark: detené Play antes de iniciar otra medición.");
+            return;
+        }
+
+        SessionState.SetString(Suite, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff", CultureInfo.InvariantCulture));
+        SessionState.SetInt(SuiteIndex, 0);
+        SessionState.SetBool(SuiteQuit, quitWhenFinished);
+        StartSuiteRun();
+    }
+
+    private static void StartSuiteRun()
+    {
+        int index = SessionState.GetInt(SuiteIndex, 0);
+        if (index == Loads.Length * Methods.Length)
+        {
+            FinishSuite(true);
+            return;
+        }
+
+        SessionState.SetBool(SuiteSucceeded, false);
+        if (!EnterBenchmark(Loads[index / Methods.Length], Methods[index % Methods.Length]))
+            FinishSuite(false);
+    }
+
+    private static void ContinueSuite(PlayModeStateChange state)
+    {
+        if (state != PlayModeStateChange.EnteredEditMode || string.IsNullOrEmpty(SessionState.GetString(Suite, "")))
+            return;
+
+        if (!SessionState.GetBool(SuiteSucceeded, false))
+        {
+            FinishSuite(false);
+            return;
+        }
+
+        SessionState.SetInt(SuiteIndex, SessionState.GetInt(SuiteIndex, 0) + 1);
+        EditorApplication.delayCall += StartSuiteRun;
+    }
+
+    private static void FinishSuite(bool success)
+    {
+        bool quit = SessionState.GetBool(SuiteQuit, false);
+        SessionState.EraseString(Suite);
+        SessionState.EraseInt(SuiteIndex);
+        SessionState.EraseBool(SuiteSucceeded);
+        SessionState.EraseBool(SuiteQuit);
+        SessionState.EraseInt(PendingCount);
+        SessionState.EraseInt(PendingMethod);
+        if (success)
+            Debug.Log("Benchmark: serie completa.");
+        else
+            Debug.LogWarning("Benchmark: serie interrumpida.");
+
+        if (quit)
+            EditorApplication.Exit(success ? 0 : 1);
+    }
+
+    private static bool EnterBenchmark(int count, EnemyBenchmarkMethod method)
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
             Debug.LogWarning("Benchmark: salí de Play antes de iniciar otra medición.");
-            return;
+            return false;
+        }
+
+        if ((method == EnemyBenchmarkMethod.JobsBurst || method == EnemyBenchmarkMethod.Ecs) && !BurstCompiler.IsEnabled)
+        {
+            Debug.LogWarning("Benchmark: activá Jobs > Burst > Enable Compilation antes de medir Burst.");
+            return false;
         }
 
         Scene scene = SceneManager.GetActiveScene();
@@ -50,18 +178,22 @@ public sealed class EnemyBaselineBenchmark : MonoBehaviour
             (startScene != null && AssetDatabase.GetAssetPath(startScene) != MainScene))
         {
             Debug.LogWarning("Benchmark: abrí únicamente Main Scene, guardá la escena y verificá la escena de inicio de Play.");
-            return;
+            return false;
         }
 
         SessionState.SetInt(PendingCount, count);
+        SessionState.SetInt(PendingMethod, (int)method);
         EditorApplication.EnterPlaymode();
+        return true;
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void StartRequestedRun()
     {
         int count = SessionState.GetInt(PendingCount, 0);
+        var method = (EnemyBenchmarkMethod)SessionState.GetInt(PendingMethod, 0);
         SessionState.EraseInt(PendingCount);
+        SessionState.EraseInt(PendingMethod);
         if (count == 0 || SceneManager.GetActiveScene().path != MainScene)
             return;
 
@@ -81,11 +213,13 @@ public sealed class EnemyBaselineBenchmark : MonoBehaviour
 
         waves.enabled = false;
         var runner = new GameObject("Enemy Baseline Benchmark").AddComponent<EnemyBaselineBenchmark>();
-        runner.Initialize(count, enemyPrefab, data, tray.bounds, spawner.transform.position.y);
+        runner.Initialize(count, method, enemyPrefab, data, tray.bounds, spawner.transform.position.y);
     }
 
-    private void Initialize(int count, Enemy prefab, EnemyData data, Bounds bounds, float y)
+    private void Initialize(int count, EnemyBenchmarkMethod method, Enemy prefab, EnemyData data, Bounds bounds, float y)
     {
+        this.method = method;
+        suiteId = SessionState.GetString(Suite, "");
         previousVSync = QualitySettings.vSyncCount;
         previousTargetFrameRate = Application.targetFrameRate;
         changedFrameSettings = true;
@@ -106,14 +240,26 @@ public sealed class EnemyBaselineBenchmark : MonoBehaviour
             Enemy enemy = Instantiate(prefab, new Vector3(x, y, z), Quaternion.identity);
             enemy.Initialize(data);
             enemy.KeepAliveForBenchmark = true;
+            enemy.UseBatchedMovement = method != EnemyBenchmarkMethod.Original;
             enemies[i] = enemy;
         }
 
-        Debug.Log($"Benchmark: {count} enemigos, semilla {Seed}. Calentamiento de {WarmupSeconds} s y medición de {SampleSeconds} s.");
+        if (method != EnemyBenchmarkMethod.Original)
+            batch = new EnemySeparationBatch(enemies, method);
+
+        Debug.Log($"Benchmark: {method} | {count} enemigos | semilla {Seed}. Calentamiento de {WarmupSeconds} s y medición de {SampleSeconds} s.");
+    }
+
+    private void Update()
+    {
+        batch?.UpdateEnemies();
     }
 
     private void LateUpdate()
     {
+        if (finished)
+            return;
+        profiled |= UnityEngine.Profiling.Profiler.enabled;
         float frameSeconds = Time.unscaledDeltaTime;
         if (!measuring)
         {
@@ -134,7 +280,7 @@ public sealed class EnemyBaselineBenchmark : MonoBehaviour
         if (sampledSeconds < SampleSeconds)
             return;
 
-        enabled = false;
+        finished = true;
         int missing = 0;
         int dead = 0;
         int inactive = 0;
@@ -151,23 +297,45 @@ public sealed class EnemyBaselineBenchmark : MonoBehaviour
         if (missing + dead + inactive > 0)
         {
             Debug.LogError($"Benchmark descartado | esperados: {enemies.Length} | ausentes: {missing} | muertos: {dead} | inactivos: {inactive}.");
+            if (suiteId.Length > 0)
+                EditorApplication.ExitPlaymode();
             return;
         }
 
-        SaveResults();
+        try
+        {
+            SaveResults();
+            if (suiteId.Length > 0)
+                SessionState.SetBool(SuiteSucceeded, true);
+        }
+        finally
+        {
+            if (suiteId.Length > 0)
+                EditorApplication.ExitPlaymode();
+        }
     }
 
     private void SaveResults()
     {
         string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "Benchmarks"));
         string stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff", CultureInfo.InvariantCulture);
-        string path = Path.Combine(directory, $"baseline-{enemies.Length}-{stamp}.csv");
+        string environment = Application.isBatchMode ? "editor-batch" : "editor";
+        string mode = method switch
+        {
+            EnemyBenchmarkMethod.Sequential => "sequential",
+            EnemyBenchmarkMethod.Jobs => "jobs",
+            EnemyBenchmarkMethod.JobsBurst => "jobs-burst",
+            EnemyBenchmarkMethod.Ecs => "ecs",
+            _ => "original"
+        };
+        string path = Path.Combine(directory, $"benchmark-{mode}-{enemies.Length}-{stamp}.csv");
         Directory.CreateDirectory(directory);
         using (var writer = new StreamWriter(path))
         {
-            writer.WriteLine("enemies,seed,frame,frame_ms");
+            writer.WriteLine("enemies,seed,frame,frame_ms,method,environment,suite,profiled,width,height");
             for (int i = 0; i < frameTimes.Count; i++)
-                writer.WriteLine(FormattableString.Invariant($"{enemies.Length},{Seed},{i + 1},{frameTimes[i]:F4}"));
+                writer.WriteLine(FormattableString.Invariant(
+                    $"{enemies.Length},{Seed},{i + 1},{frameTimes[i]:F4},{mode},{environment},{suiteId},{(profiled ? 1 : 0)},{Screen.width},{Screen.height}"));
         }
 
         frameTimes.Sort();
@@ -175,11 +343,12 @@ public sealed class EnemyBaselineBenchmark : MonoBehaviour
         float p95 = frameTimes[Mathf.CeilToInt(frameTimes.Count * 0.95f) - 1];
         double mean = sampledSeconds * 1000.0 / frameTimes.Count;
         Debug.Log(FormattableString.Invariant(
-            $"Benchmark terminado | {enemies.Length} enemigos | {frameTimes.Count} cuadros | media {mean:F2} ms | mediana {median:F2} ms | p95 {p95:F2} ms\nCSV: {path}"));
+            $"Benchmark terminado | {method} | {enemies.Length} enemigos | {frameTimes.Count} cuadros | media {mean:F2} ms | mediana {median:F2} ms | p95 {p95:F2} ms\nCSV: {path}"));
     }
 
     private void OnDestroy()
     {
+        batch?.Dispose();
         if (!changedFrameSettings)
             return;
 
